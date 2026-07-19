@@ -135,7 +135,7 @@
                     <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
                         <option value="POR CONTACTAR">POR CONTACTAR</option>
-                           </select>
+                    </select>
                 </div>
             </div>
         </section>
@@ -295,7 +295,7 @@
                     window.addEventListener('beforeinstallprompt', (e) => {
                         e.preventDefault();
                         this.deferredPrompt = e;
-                        this.mostrarBotonInstalar = true; // Hace visible el botón amarillo de instalación
+                        this.mostrarBotonInstalar = true;
                     });
 
                     const request = indexedDB.open("AgricolaHuarmeyMasterDB", 1);
@@ -353,8 +353,8 @@
                     
                     this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
                         const matchSearch = t.dni.includes(s) || 
-                                            t.apellidosNombres.toLowerCase().includes(s) || 
-                                            t.rutaApp.toLowerCase().includes(s);
+                                             t.apellidosNombres.toLowerCase().includes(s) || 
+                                             t.rutaApp.toLowerCase().includes(s);
                         
                         const matchCriterio = this.filtros.criterio === '' || 
                                               String(t.criterioGh).toUpperCase().trim() === this.filtros.criterio;
@@ -385,7 +385,7 @@
                 },
 
                 enviarWhatsApp(t) {
-                    const mensaje = `Hola ${t.apellidosNombres}, te saluda la empresa Agrícola Huarmey | *Fundo Frusan* 🫐. Nos complace informarte que ya está por iniciar nuestra *Campaña de Cosecha de Arándanos 2026* 🫐. Queremos hacerte la invitación formal para que te unes a este gran equipo. Por favor, confírmanos tu disponibilidad respondiendo a este mensaje.;
+                    const mensaje = `Hola ${t.apellidosNombres}, te saluda la empresa Agrícola Huarmey | *Fundo Frusan* 🫐. Nos complace informarte que ya está por iniciar nuestra *Campaña de Cosecha de Arándanos 2026* 🫐. Queremos hacerte la invitación formal para que te unes a este gran equipo. Por favor, confírmanos tu disponibilidad respondiendo a este mensaje.`;
                     window.open(`https://api.whatsapp.com/send?phone=${t.celularNisira}&text=${encodeURIComponent(mensaje)}`, '_blank');
                 },
 
@@ -397,7 +397,6 @@
 
                     this.agregarAlerta("📊 Generando archivo Excel...", "info");
 
-                    // Mapeo limpio de los datos para las columnas del Excel
                     const datosExcel = this.trabajadoresFiltrados.map(t => ({
                         "DNI": t.dni,
                         "Apellidos y Nombres": t.apellidosNombres,
@@ -413,12 +412,11 @@
                         "Alerta": t.alerta
                     }));
 
-                    // Conversión y descarga fluida
                     const hoja = XLSX.utils.json_to_sheet(datosExcel);
                     const libro = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(libro, hoja, "Empadronamiento");
+                    XXLSX.utils.book_append_sheet(libro, hoja, "Empadronamiento");
                     
-                    XLSX.writeFile(libro, "Reporte_empadronamiento.xlsx");
+                    XXLSX.writeFile(libro, "Reporte_empadronamiento.xlsx");
                     this.agregarAlerta("✅ ¡Descarga Completa exitosamente!", "success");
                 },
 
