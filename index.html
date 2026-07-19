@@ -8,6 +8,8 @@
     <meta name="theme-color" content="#B91C1C">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Librería para exportar a Excel nativamente -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -52,7 +54,7 @@
             </div>
             <div>
                 <h1 class="text-xl font-bold tracking-wider">Agrícola Huarmey</h1>
-                <p class="text-xs text-red-100">Filtro Personal Histórico Cosecha</p>
+                <p class="text-xs text-red-100">Fundo Frusan | Personal Histórico Cosecha</p>
             </div>
         </div>
         <div class="flex items-center space-x-3">
@@ -94,9 +96,15 @@
         <section class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 class="text-lg font-bold text-gray-700">🔍 Filtros en Tiempo Real</h2>
-                <button @click="sincronizarConSheets()" class="w-full sm:w-auto bg-verde-natural text-white font-bold px-5 py-2.5 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2">
-                    <span>🔄 Conectado BD. Históricos Cosecha</span>
-                </button>
+                <div class="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+                    <!-- BOTÓN EXPORTAR EXCEL -->
+                    <button @click="exportarAExcel()" class="w-full sm:w-auto bg-blue-600 text-white font-bold px-5 py-2.5 rounded-xl shadow hover:bg-blue-700 transition-all flex items-center justify-center space-x-2">
+                        <span>📥 Exportar Excel</span>
+                    </button>
+                    <button @click="sincronizarConSheets()" class="w-full sm:w-auto bg-verde-natural text-white font-bold px-5 py-2.5 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2">
+                        <span>🔄 Conectar a la BD Históricos</span>
+                    </button>
+                </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -127,7 +135,7 @@
                     <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
                         <option value="POR CONTACTAR">POR CONTACTAR</option>
-                            </select>
+                           </select>
                 </div>
             </div>
         </section>
@@ -377,8 +385,41 @@
                 },
 
                 enviarWhatsApp(t) {
-                    const mensaje = `Hola ${t.apellidosNombres}, te informamos de Agrícola Huarmey. Tu ruta asignada es: ${t.rutaApp}.`;
+                    const mensaje = `Hola ${t.apellidosNombres}, te saluda la empresa Agrícola Huarmey | *Fundo Frusan* 🫐. Nos complace informarte que ya está por iniciar nuestra *Campaña de Cosecha de Arándanos 2026* 🫐. Queremos hacerte la invitación formal para que te unes a este gran equipo. Por favor, confírmanos tu disponibilidad respondiendo a este mensaje. ${t.rutaApp}.`;
                     window.open(`https://api.whatsapp.com/send?phone=${t.celularNisira}&text=${encodeURIComponent(mensaje)}`, '_blank');
+                },
+
+                exportarAExcel() {
+                    if (this.trabajadoresFiltrados.length === 0) {
+                        this.agregarAlerta("⚠️ No hay registros filtrados para exportar.", "error");
+                        return;
+                    }
+
+                    this.agregarAlerta("📊 Generando archivo Excel...", "info");
+
+                    // Mapeo limpio de los datos para las columnas del Excel
+                    const datosExcel = this.trabajadoresFiltrados.map(t => ({
+                        "DNI": t.dni,
+                        "Apellidos y Nombres": t.apellidosNombres,
+                        "Promedio": t.promedio,
+                        "Criterio (GH)": t.criterioGh,
+                        "Celular (Nisira)": t.celularNisira,
+                        "WhatsApp Plataforma": t.whatsappPlataforma,
+                        "Ruta (Nisira)": t.rutaNisira,
+                        "Ruta (App)": t.rutaApp,
+                        "Estado Empadronamiento": t.estadoEmpadronamiento,
+                        "Activo Fundo": t.activoFundo,
+                        "Modalidad Final": t.modalidadFinal,
+                        "Alerta": t.alerta
+                    }));
+
+                    // Conversión y descarga fluida
+                    const hoja = XLSX.utils.json_to_sheet(datosExcel);
+                    const libro = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(libro, hoja, "Empadronamiento");
+                    
+                    XLSX.writeFile(libro, "Reporte_empadronamiento.xlsx");
+                    this.agregarAlerta("✅ ¡Descarga Completa exitosamente!", "success");
                 },
 
                 async sincronizarConSheets() {
@@ -387,7 +428,7 @@
                         return;
                     }
                     
-                    this.agregarAlerta("🔄 Conectando al servidor de Google Sheets...", "info");
+                    this.agregarAlerta("🔄 Conectando a la BD Empadronamiento...", "info");
                     const callbackName = 'jsonp_mapeo_' + Math.round(100000 * Math.random());
                     
                     window[callbackName] = (data) => {
