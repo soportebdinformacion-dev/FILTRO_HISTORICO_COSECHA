@@ -1,12 +1,11 @@
-const CACHE_NAME = 'agricola-huarmey-v3';
+const CACHE_NAME = 'agricola-huarmey-v1';
 const ASSETS = [
-  './',
   './index.html',
   './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js'
+  './ICO FRUSAN.png'
 ];
 
+// Instalar Service Worker
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -15,6 +14,7 @@ self.addEventListener('install', (e) => {
   );
 });
 
+// Activar Service Worker
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -29,6 +29,7 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// Responder desde el Cache o ir a la red
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
