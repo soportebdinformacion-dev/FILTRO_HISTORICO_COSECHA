@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agrícola Huarmey - Histórico Cosecha</title>
+    <title>Agrícola Huarmey - Histórico Cosecha Completo</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#B91C1C">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -27,42 +27,41 @@
 </head>
 <body class="bg-gray-50 font-sans text-gray-800" x-data="appCosecha()" x-init="initDB()">
 
-    <!-- NOTIFICACIONES DE ALERTA DINÁMICAS -->
-    <div class="fixed top-5 right-5 z-50 space-y-2 max-w-sm">
+    <!-- NOTIFICACIONES DE ALERTA DE CONEXIÓN -->
+    <div class="fixed top-5 right-5 z-50 space-y-2 max-w-sm w-full px-4 sm:px-0">
         <template x-for="alerta in alertas" :key="alerta.id">
             <div :class="{
                 'bg-green-600 text-white': alerta.tipo === 'success',
                 'bg-blue-600 text-white': alerta.tipo === 'info',
                 'bg-red-600 text-white': alerta.tipo === 'error'
-            }" class="p-4 rounded-xl shadow-lg flex items-center justify-between space-x-2 transition-all transform translate-y-0">
-                <span class="text-sm font-bold" x-text="alerta.mensaje"></span>
-                <button @click="removerAlerta(alerta.id)" class="text-xs font-bold opacity-70 hover:opacity-100">✕</button>
+            }" class="p-4 rounded-xl shadow-xl flex items-center justify-between space-x-2 transition-all duration-300 transform translate-y-0">
+                <div class="flex items-center space-x-2">
+                    <span x-text="alerta.tipo === 'info' ? '🔄' : (alerta.tipo === 'success' ? '✅' : '❌')"></span>
+                    <span class="text-sm font-bold" x-text="alerta.mensaje"></span>
+                </div>
+                <button @click="removerAlerta(alerta.id)" class="text-xs font-bold opacity-70 hover:opacity-100 p-1">✕</button>
             </div>
         </template>
     </div>
 
-    <!-- HEADER / TOP BAR -->
+    <!-- HEADER -->
     <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-            <svg class="w-10 h-10 bg-white rounded-full p-1" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="55" r="35" stroke="#B91C1C" stroke-width="8"/>
-                <path d="M50 20 C65 20, 75 35, 75 55 C75 75, 55 85, 50 85 C35 85, 25 75, 25 55 C25 35, 35 20, 50 20 Z" fill="#B91C1C"/>
-                <path d="M48 22 C35 10, 60 5, 68 18 C55 10, 52 20, 48 22 Z" fill="#15803D"/>
-            </svg>
+            <div class="bg-white rounded-full p-1 text-rojo-agricola text-xl w-10 h-10 flex items-center justify-center shadow-inner">🌾</div>
             <div>
-                <h1 class="text-xl font-bold tracking-wider">Agrícola Huarmey | Fundo Frusan</h1>
-                <p class="text-xs text-red-100">Filtro del Histórico de Cosechadores</p>
+                <h1 class="text-xl font-bold tracking-wider">Agrícola Huarmey</h1>
+                <p class="text-xs text-red-100">Base Mapeada de Cosecha</p>
             </div>
         </div>
-        <div class="flex items-center space-x-2">
-            <span :class="isOnline ? 'online-badge' : 'offline-badge'" class="h-3 w-3 rounded-full inline-block animate-pulse"></span>
-            <span class="text-xs font-semibold uppercase tracking-wider" x-text="isOnline ? 'En Línea' : 'Modo Offline'"></span>
+        <div class="flex items-center space-x-2 bg-black/20 px-3 py-1.5 rounded-full">
+            <span :class="isOnline ? 'online-badge' : 'offline-badge'" class="h-2.5 w-2.5 rounded-full inline-block animate-pulse"></span>
+            <span class="text-xs font-bold uppercase tracking-wider" x-text="isOnline ? 'Conectado' : 'Modo Offline'"></span>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto p-4 space-y-6">
         
-        <!-- SECCIÓN DE INDICADORES -->
+        <!-- RESUMEN DE CRITERIOS GH -->
         <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between">
                 <div class="flex justify-between items-center"><span class="text-xs font-bold uppercase tracking-wider">🏆 Excelente</span><span>🔥</span></div>
@@ -82,13 +81,19 @@
             </div>
         </section>
         
-        <!-- SECCIÓN DE FILTROS -->
+        <!-- BUSCADORES Y FILTROS -->
         <section class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
-            <h2 class="text-lg font-bold text-gray-700">🔍 Buscador y Filtros Avanzados</h2>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-lg font-bold text-gray-700">🔍 Filtros en Tiempo Real</h2>
+                <button @click="sincronizarConSheets()" class="w-full sm:w-auto bg-verde-natural text-white font-bold px-5 py-2.5 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2">
+                    <span>🔄 Sincronizar Google Sheets</span>
+                </button>
+            </div>
+            
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 <div class="md:col-span-2 lg:col-span-2">
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI o Nombres</label>
-                    <input type="text" x-model="filtros.search" @input="filtrarDatos()" placeholder="Ej. 45678912 o Juan Perez..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI, Nombre o Ruta</label>
+                    <input type="text" x-model="filtros.search" @input="filtrarDatos()" placeholder="Ej: 4432... o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH)</label>
@@ -101,30 +106,6 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Empadronamiento</label>
-                    <select x-model="filtros.estadoEmpadronamiento" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                        <option value="">TODOS</option>
-                        <option value="COMPLETO">COMPLETO</option>
-                        <option value="PENDIENTE">PENDIENTE</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Activo Fundo</label>
-                    <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                        <option value="">TODOS</option>
-                        <option value="SI">SÍ</option>
-                        <option value="NO">NO</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Modalidad Final</label>
-                    <select x-model="filtros.modalidadFinal" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                        <option value="">TODOS</option>
-                        <option value="DIRECTO">DIRECTO</option>
-                        <option value="TERCERO">TERCERO</option>
-                    </select>
-                </div>
-                <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Alerta</label>
                     <select x-model="filtros.alerta" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
@@ -132,67 +113,93 @@
                         <option value="OBSERVADO">OBSERVADO</option>
                     </select>
                 </div>
-                <!-- Botón Sync Integrado con tu URL -->
-                <div class="flex items-end">
-                    <button @click="sincronizarConSheets()" class="w-full bg-verde-natural text-white font-bold p-3 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2">
-                        <span>🔄 Sync Sheets</span>
-                    </button>
-                </div>
             </div>
         </section>
 
-        <!-- VISTA MÓVIL (TARJETAS) -->
+        <!-- MÓVIL (TARJETAS CON LAS 12 COLUMNAS INCLUIDAS) -->
         <section class="block lg:hidden space-y-4">
             <template x-for="t in trabajadoresFiltrados" :key="t.dni">
-                <div class="bg-white rounded-2xl p-5 shadow-sm border-l-8 border border-gray-200 space-y-2" :class="t.alerta === 'OBSERVADO' ? 'border-l-red-500' : 'border-l-verde-natural'">
-                    <div class="flex justify-between items-start">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border-l-8 border border-gray-200 space-y-3" 
+                     :class="t.alerta === 'OBSERVADO' ? 'border-l-red-500 bg-red-50/20' : 'border-l-green-600'">
+                    
+                    <div class="flex justify-between items-start border-b border-gray-100 pb-2">
                         <div>
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600" x-text="'DNI: ' + t.dni"></span>
-                            <h4 class="text-lg font-bold text-gray-900 mt-1" x-text="t.apellidosNombres"></h4>
+                            <span class="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded-md font-bold text-gray-700" x-text="'DNI: ' + t.dni"></span>
+                            <h4 class="text-base font-bold text-gray-900 mt-1" x-text="t.apellidosNombres"></h4>
                         </div>
-                        <span class="text-sm font-black px-2 py-1 rounded-lg bg-red-50 text-rojo-agricola" x-text="'Prom: ' + t.promedio"></span>
+                        <div class="text-right">
+                            <span class="text-[10px] font-bold text-gray-400 block">PROMEDIO</span>
+                            <span class="text-xl font-black text-rojo-agricola" x-text="t.promedio"></span>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs border-t border-b border-gray-100 py-2">
-                        <div><strong>Criterio GH:</strong> <span x-text="t.criterioGh"></span></div>
-                        <div><strong>Celular:</strong> <span x-text="t.celularNisira"></span></div>
-                        <div><strong>Ruta App:</strong> <span x-text="t.rutaApp"></span></div>
-                        <div><strong>Fundo:</strong> <span x-text="t.activoFundo"></span></div>
+
+                    <!-- Visualización de los 12 datos organizados -->
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-3 text-xs text-gray-600">
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Criterio (GH)</span> <span class="font-bold text-gray-900" x-text="t.criterioGh"></span></div>
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Celular (Nisira)</span> <span class="font-medium text-gray-900" x-text="t.celularNisira"></span></div>
+                        
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">WhatsApp Plataforma</span> <span class="font-medium text-gray-900" x-text="t.whatsappPlataforma"></span></div>
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Estado Empadronamiento</span> <span class="font-medium text-gray-900" x-text="t.estadoEmpadronamiento"></span></div>
+                        
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Ruta (Nisira)</span> <span class="font-medium text-gray-900" x-text="t.rutaNisira"></span></div>
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Ruta (App)</span> <span class="font-bold text-emerald-700" x-text="t.rutaApp"></span></div>
+                        
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Activo Fundo</span> <span class="font-bold text-gray-900" x-text="t.activoFundo"></span></div>
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Modalidad Final</span> <span class="font-medium text-gray-900" x-text="t.modalidadFinal"></span></div>
                     </div>
-                    <button @click="enviarInvitacionWhatsApp(t)" class="w-full bg-green-600 text-white font-bold py-2 rounded-xl text-center text-sm">💬 WhatsApp</button>
+
+                    <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
+                        <span class="px-2 py-1 rounded-full text-[10px] font-bold" :class="t.alerta === 'OBSERVADO' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" x-text="t.alerta"></span>
+                        <button @click="enviarWhatsApp(t)" class="bg-green-600 text-white font-bold px-4 py-2 rounded-xl text-xs shadow hover:bg-green-700">💬 WhatsApp</button>
+                    </div>
                 </div>
             </template>
         </section>
 
-        <!-- VISTA ESCRITORIO (TABLA) -->
+        <!-- ESCRITORIO (TABLA COMPLETA CON LAS 12 COLUMNAS) -->
         <section class="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto w-full">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
-                        <tr class="bg-gray-100 border-b border-gray-200 text-gray-600 text-xs font-bold uppercase">
+                        <tr class="bg-gray-100 border-b border-gray-200 text-gray-600 text-xs font-bold uppercase tracking-wider">
                             <th class="p-4">DNI</th>
                             <th class="p-4">Apellidos y Nombres</th>
-                            <th class="p-4">Promedio</th>
-                            <th class="p-4">Criterio GH</th>
-                            <th class="p-4">Celular</th>
-                            <th class="p-4">Ruta App</th>
+                            <th class="p-4">Prom.</th>
+                            <th class="p-4">Criterio (GH)</th>
+                            <th class="p-4">Celular (Nisira)</th>
+                            <th class="p-4">WhatsApp Plat.</th>
+                            <th class="p-4">Ruta (Nisira)</th>
+                            <th class="p-4">Ruta (App)</th>
+                            <th class="p-4">Empadronamiento</th>
+                            <th class="p-4">Activo Fundo</th>
+                            <th class="p-4">Modalidad</th>
                             <th class="p-4">Alerta</th>
                             <th class="p-4 text-center">Acción</th>
                         </tr>
                     </thead>
                     <tbody class="text-sm divide-y divide-gray-100">
                         <template x-for="t in trabajadoresFiltrados" :key="t.dni">
-                            <tr class="hover:bg-gray-50" :class="t.alerta === 'OBSERVADO' ? 'bg-red-50/50' : ''">
-                                <td class="p-4 font-bold" x-text="t.dni"></td>
-                                <td class="p-4" x-text="t.apellidosNombres"></td>
-                                <td class="p-4 text-rojo-agricola font-bold" x-text="t.promedio"></td>
-                                <td class="p-4 font-bold" x-text="t.criterioGh"></td>
-                                <td class="p-4" x-text="t.celularNisira"></td>
-                                <td class="p-4" x-text="t.rutaApp"></td>
+                            <tr class="hover:bg-gray-50 transition-colors" :class="t.alerta === 'OBSERVADO' ? 'bg-red-50/40' : ''">
+                                <td class="p-4 font-mono font-bold text-gray-700" x-text="t.dni"></td>
+                                <td class="p-4 font-semibold text-gray-900" x-text="t.apellidosNombres"></td>
+                                <td class="p-4 text-rojo-agricola font-black" x-text="t.promedio"></td>
+                                <td class="p-4 font-bold text-gray-800" x-text="t.criterioGh"></td>
+                                <td class="p-4 text-gray-600" x-text="t.celularNisira"></td>
+                                <td class="p-4 text-gray-500" x-text="t.whatsappPlataforma"></td>
+                                <td class="p-4 text-gray-500" x-text="t.rutaNisira"></td>
+                                <td class="p-4 font-bold text-emerald-700" x-text="t.rutaApp"></td>
+                                <td class="p-4 text-xs font-medium text-gray-600" x-text="t.estadoEmpadronamiento"></td>
+                                <td class="p-4 text-center font-bold text-xs text-gray-700" x-text="t.activoFundo"></td>
+                                <td class="p-4 text-xs text-gray-600" x-text="t.modalidadFinal"></td>
                                 <td class="p-4">
-                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full" :class="t.alerta === 'OBSERVADO' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" x-text="t.alerta"></span>
+                                    <span class="px-2.5 py-1 text-xs font-bold rounded-full" 
+                                          :class="t.alerta === 'OBSERVADO' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" 
+                                          x-text="t.alerta"></span>
                                 </td>
                                 <td class="p-4 text-center">
-                                    <button @click="enviarInvitacionWhatsApp(t)" class="bg-green-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs">WhatsApp</button>
+                                    <button @click="enviarWhatsApp(t)" class="bg-green-600 hover:bg-green-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow transition-all">
+                                        WhatsApp
+                                    </button>
                                 </td>
                             </tr>
                         </template>
@@ -203,8 +210,8 @@
     </main>
 
     <script>
-        // URL de tu Apps Script vinculada e integrada directamente
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-J9PSJImrNMUkyOKIjTY2Qr-WkhzXdfuaaX7xz8AQebWyZoWrgymEQMjgUhA1t3-fhg/exec";
+        // Tu URL exacta y verificada de Apps Script
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxdUN5nQXjiDEOSgzo31VPkOup57__XXbDCCt0JMOCf6o7NZyqTKJqk5BMaFcf1yJDETg/exec";
 
         function appCosecha() {
             return {
@@ -213,23 +220,23 @@
                 todosLosTrabajadores: [],
                 trabajadoresFiltrados: [],
                 alertas: [],
-                filtros: { search: '', criterio: '', estadoEmpadronamiento: '', activoFundo: '', modalidadFinal: '', alerta: '' },
+                filtros: { search: '', criterio: '', alerta: '' },
                 totalesCriterio: { malo: 0, regular: 0, bueno: 0, excelente: 0 },
 
                 agregarAlerta(mensaje, tipo = 'info') {
                     const id = Date.now();
                     this.alertas.push({ id, mensaje, tipo });
-                    setTimeout(() => this.removerAlerta(id), 5000); // Se borra sola en 5s
+                    setTimeout(() => this.removerAlerta(id), 4500); 
                 },
                 removerAlerta(id) {
                     this.alertas = this.alertas.filter(a => a.id !== id);
                 },
 
                 initDB() {
-                    window.addEventListener('online', () => { this.isOnline = true; this.agregarAlerta("🟢 Conexión de red restablecida", "success"); });
-                    window.addEventListener('offline', () => { this.isOnline = false; this.agregarAlerta("🔴 Estás trabajando sin conexión a internet", "error"); });
+                    window.addEventListener('online', () => { this.isOnline = true; this.agregarAlerta("🟢 Conexión a Internet restablecida.", "success"); });
+                    window.addEventListener('offline', () => { this.isOnline = false; this.agregarAlerta("🔴 Trabajando sin conexión a Internet.", "error"); });
 
-                    const request = indexedDB.open("AgricolaHuarmeyDB", 1);
+                    const request = indexedDB.open("AgricolaHuarmeyMasterDB", 1);
                     request.onupgradeneeded = (e) => {
                         let db = e.target.result;
                         if (!db.objectStoreNames.contains("historicos")) {
@@ -243,6 +250,7 @@
                 },
 
                 cargarDatosLocales() {
+                    if (!this.db) return;
                     const transaction = this.db.transaction(["historicos"], "readonly");
                     const store = transaction.objectStore("historicos");
                     const getAll = store.getAll();
@@ -257,37 +265,40 @@
                     this.totalesCriterio = { malo: 0, regular: 0, bueno: 0, excelente: 0 };
                     this.todosLosTrabajadores.forEach(t => {
                         const crit = String(t.criterioGh).toUpperCase().trim();
-                        if (crit === 'MALO') this.totalesCriterio.malo++;
-                        if (crit === 'REGULAR') this.totalesCriterio.regular++;
-                        if (crit === 'BUENO') this.totalesCriterio.bueno++;
-                        if (crit === 'EXCELENTE') this.totalesCriterio.excelente++;
+                        if (crit.includes('MALO')) this.totalesCriterio.malo++;
+                        if (crit.includes('REGULAR')) this.totalesCriterio.regular++;
+                        if (crit.includes('BUENO')) this.totalesCriterio.bueno++;
+                        if (crit.includes('EXCELENTE')) this.totalesCriterio.excelente++;
                     });
                 },
 
                 filtrarDatos() {
                     let s = this.filtros.search.toLowerCase().trim();
                     this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
-                        const matchSearch = t.dni.includes(s) || t.apellidosNombres.toLowerCase().includes(s);
+                        const matchSearch = t.dni.includes(s) || 
+                                            t.apellidosNombres.toLowerCase().includes(s) || 
+                                            t.rutaApp.toLowerCase().includes(s);
                         const matchCriterio = this.filtros.criterio === '' || String(t.criterioGh).toUpperCase().trim() === this.filtros.criterio;
-                        return matchSearch && matchCriterio;
+                        const matchAlerta = this.filtros.alerta === '' || String(t.alerta).toUpperCase().trim() === this.filtros.alerta;
+
+                        return matchSearch && matchCriterio && matchAlerta;
                     });
                 },
 
-                enviarInvitacionWhatsApp(t) {
-                    const msg = `¡Hola, ${t.apellidosNombres}! Te saluda Agrícola Huarmey. Ruta asignada: ${t.rutaApp}. Criterio: ${t.criterioGh}.`;
-                    window.open(`https://api.whatsapp.com/send?phone=${t.celularNisira}&text=${encodeURIComponent(msg)}`, '_blank');
+                enviarWhatsApp(t) {
+                    const mensaje = `Hola ${t.apellidosNombres}, te informamos de Agrícola Huarmey. Tu ruta asignada es: ${t.rutaApp}. Estado: ${t.alerta}.`;
+                    window.open(`https://api.whatsapp.com/send?phone=${t.celularNisira}&text=${encodeURIComponent(mensaje)}`, '_blank');
                 },
 
-                // CONEXIÓN ROBUSTA CON CONTROL DE RESPUESTA
                 async sincronizarConSheets() {
                     if (!this.isOnline) {
-                        this.agregarAlerta("⚠️ No hay internet. Conéctate para sincronizar.", "error");
+                        this.agregarAlerta("⚠️ No se puede sincronizar: revisa tu conexión a Internet.", "error");
                         return;
                     }
                     
-                    this.agregarAlerta("🔄 Conectando con Google Sheets...", "info");
+                    this.agregarAlerta("🔄 Conectando al servidor de Google Sheets...", "info");
                     
-                    const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                    const callbackName = 'jsonp_mapeo_' + Math.round(100000 * Math.random());
                     
                     window[callbackName] = (data) => {
                         if(data && data.length > 0) {
@@ -295,27 +306,35 @@
                             const store = tx.objectStore("historicos");
                             
                             data.forEach(item => {
-                                item.syncStatus = "Sincronizado";
-                                store.put(item);
+                                store.put(item); 
                             });
                             
                             tx.oncomplete = () => {
                                 this.cargarDatosLocales();
-                                this.agregarAlerta(`✅ ¡Conexión Establecida! Se cargaron ${data.length} registros correctamente.`, "success");
-                                delete window[callbackName];
-                                document.getElementById(callbackName).remove();
+                                this.agregarAlerta(`✅ ¡Conexión Establecida! ${data.length} registros cargados correctamente.`, "success");
+                                limpiarScript();
                             };
                         } else {
-                            this.agregarAlerta("⚠️ Conectado, pero el archivo no devolvió filas con datos.", "error");
+                            this.agregarAlerta("⚠️ Conexión correcta pero no se obtuvieron filas válidas.", "error");
+                            limpiarScript();
                         }
                     };
 
                     const script = document.createElement('script');
                     script.id = callbackName;
                     script.src = `${GAS_API_URL}?action=read&callback=${callbackName}`;
+                    
                     script.onerror = () => {
-                        this.agregarAlerta("❌ Falló el enlace. Revisa los permisos de Apps Script (Debe estar en 'Cualquiera').", "error");
+                        this.agregarAlerta("❌ Error al enlazar. Asegúrate de haber publicado el script como 'Cualquiera' (Anyone) en Google Sheets.", "error");
+                        limpiarScript();
                     };
+
+                    function limpiarScript() {
+                        delete window[callbackName];
+                        const el = document.getElementById(callbackName);
+                        if(el) el.remove();
+                    }
+
                     document.body.appendChild(script);
                 }
             }
