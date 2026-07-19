@@ -31,7 +31,6 @@
     <!-- HEADER / TOP BAR -->
     <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-            <!-- Logo conceptual basado en la imagen provista (Fruta/Tierra estilizada) -->
             <svg class="w-10 h-10 bg-white rounded-full p-1" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="50" cy="55" r="35" stroke="#B91C1C" stroke-width="8"/>
                 <path d="M50 20 C65 20, 75 35, 75 55 C75 75, 55 85, 50 85 C35 85, 25 75, 25 55 C25 35, 35 20, 50 20 Z" fill="#B91C1C"/>
@@ -53,7 +52,6 @@
         
         <!-- SECCIÓN DE INDICADORES / TOTALES POR CRITERIO GH -->
         <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Tarjeta Excelente -->
             <div class="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold uppercase tracking-wider opacity-90">🏆 Excelente</span>
@@ -62,7 +60,6 @@
                 <p class="text-3xl font-black mt-2" x-text="totalesCriterio.excelente"></p>
             </div>
 
-            <!-- Tarjeta Bueno -->
             <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold uppercase tracking-wider opacity-90">⭐ Bueno</span>
@@ -71,7 +68,6 @@
                 <p class="text-3xl font-black mt-2" x-text="totalesCriterio.bueno"></p>
             </div>
 
-            <!-- Tarjeta Regular -->
             <div class="bg-gradient-to-br from-yellow-500 to-amber-600 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold uppercase tracking-wider opacity-90">⚖️ Regular</span>
@@ -80,7 +76,6 @@
                 <p class="text-3xl font-black mt-2" x-text="totalesCriterio.regular"></p>
             </div>
 
-            <!-- Tarjeta Malo -->
             <div class="bg-gradient-to-br from-red-600 to-rose-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
                 <div class="flex justify-between items-center">
                     <span class="text-xs font-bold uppercase tracking-wider opacity-90">⚠️ Malo</span>
@@ -96,12 +91,10 @@
                 🔍 Buscador y Filtros Avanzados
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <!-- Buscador Principal -->
                 <div class="md:col-span-2 lg:col-span-2">
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI o Nombres</label>
                     <input type="text" x-model="filtros.search" @input="filtrarDatos()" placeholder="Ej. 45678912 o Juan Perez..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
                 </div>
-                <!-- Filtro Criterio GH -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH)</label>
                     <select x-model="filtros.criterio" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
@@ -112,7 +105,6 @@
                         <option value="MALO">MALO</option>
                     </select>
                 </div>
-                <!-- Filtro Estado Empadronamiento -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Empadronamiento</label>
                     <select x-model="filtros.estadoEmpadronamiento" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
@@ -121,7 +113,6 @@
                         <option value="PENDIENTE">PENDIENTE</option>
                     </select>
                 </div>
-                <!-- Filtro Activo Fundo -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Activo Fundo</label>
                     <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
@@ -130,7 +121,6 @@
                         <option value="NO">NO</option>
                     </select>
                 </div>
-                <!-- Filtro Modalidad Final -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Modalidad Final</label>
                     <select x-model="filtros.modalidadFinal" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
@@ -139,7 +129,6 @@
                         <option value="TERCERO">TERCERO</option>
                     </select>
                 </div>
-                <!-- Filtro Alerta -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Alerta</label>
                     <select x-model="filtros.alerta" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
@@ -148,7 +137,7 @@
                         <option value="OBSERVADO">OBSERVADO</option>
                     </select>
                 </div>
-                <!-- Botón Sync (JSONP Anti-CORS) -->
+                <!-- Botón Sync Conexión Directa -->
                 <div class="flex items-end">
                     <button @click="sincronizarConSheets()" class="w-full bg-verde-natural text-white font-bold p-3 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2 text-base">
                         <span>🔄 Sync Sheets</span>
@@ -157,7 +146,7 @@
             </div>
         </section>
 
-        <!-- VISTA DE TARJETAS DINÁMICAS (MOBILE-FIRST) -->
+        <!-- VISTA MÓVIL (TARJETAS) -->
         <section class="block lg:hidden space-y-4">
             <h3 class="text-md font-bold text-gray-600 px-1">Registros Encontrados (<span x-text="trabajadoresFiltrados.length"></span>)</h3>
             <template x-for="t in trabajadoresFiltrados" :key="t.dni">
@@ -192,7 +181,7 @@
             </template>
         </section>
 
-        <!-- VISTA DE TABLA DINÁMICA (TABLET Y PC) -->
+        <!-- VISTA ESCRITORIO (TABLA) -->
         <section class="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left border-collapse">
@@ -243,8 +232,8 @@
     </main>
 
     <script>
-        // ¡IMPORTANTE! Reemplaza este ID por la URL de tu aplicación web publicada en Apps Script
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwcZy30D_RI-BgAkySHI-u1Ibhg34P55_1Dn0bGi0pKgqIxfhVE4XSI4Yr9oNql80y8Hg/exec";
+        // ¡IMPORTANTE! Reemplaza este enlace por tu URL obtenida en "Archivo > Compartir > Publicar en la Web" (Elige formato CSV)
+        const URL_CSV_SHEETS = "https://docs.google.com/spreadsheets/d/1sHNcnWG0nttqbNbvulpjue2Tjjd-_5Sc_mkwXAF4Odw/edit?usp=sharing";
 
         function appCosecha() {
             return {
@@ -268,7 +257,7 @@
                 },
 
                 initDB() {
-                    window.addEventListener('online', () => { this.isOnline = true; this.procesarColaPendientes(); });
+                    window.addEventListener('online', () => { this.isOnline = true; });
                     window.addEventListener('offline', () => { this.isOnline = false; });
 
                     const request = indexedDB.open("AgricolaHuarmeyDB", 1);
@@ -326,16 +315,12 @@
                 },
 
                 enviarInvitacionWhatsApp(t) {
-                    const msg = `¡Hola, ${t.apellidosNombres}! 🌿 Te saluda Agrícola Huarmey. Queremos invitarte formalmente a iniciar nuestra gran campaña de Cosecha de Arándanos 🍇. Tu desempeño histórico nos respalda (Criterio: ${t.criterioGh}). Tu ruta asignada es: ${t.rutaApp}. ¡Te esperamos!`;
+                    const msg = `¡Hola, ${t.apellidosNombres}! 🌿 Te saluda Agrícola Huarmey. Queremos invitarte a iniciar la campaña de Cosecha 🍇. Tu desempeño histórico es (Criterio: ${t.criterioGh}). Tu ruta asignada es: ${t.rutaApp}. ¡Te esperamos!`;
                     const url = `https://api.whatsapp.com/send?phone=${t.whatsappPlataforma}&text=${encodeURIComponent(msg)}`;
                     
-                    t.syncStatus = "Pendiente";
+                    t.syncStatus = "Sincronizado";
                     this.guardarEnIndexedDB(t);
                     window.open(url, '_blank');
-                    
-                    if (this.isOnline) {
-                        this.sincronizarConSheets();
-                    }
                 },
 
                 guardarEnIndexedDB(item) {
@@ -343,80 +328,68 @@
                     tx.objectStore("historicos").put(item);
                 },
 
-                // SOLUCIÓN DEFINITIVA ANTI-CORS (JSONP BRIDGE)
+                // SISTEMA DIRECTO DE LECTURA POR STREAM CSV DE GOOGLE
+                async sincronizarConSheets() {
+                    if (!this.isOnline) {
+                        alert("⚠️ Estás offline. Conéctate a internet para sincronizar.");
+                        return;
+                    }
 
-     async sincronizarConSheets() {
-    if (!this.isOnline) {
-        alert("⚠️ Estás offline. Conéctate a internet para sincronizar.");
-        return;
-    }
-    
-    const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-    
-    // Alerta de depuración para saber si el script se colgó antes de responder
-    const timeoutId = setTimeout(() => {
-        alert("⏱️ La conexión tardó demasiado. Verifica que la URL del script termine en '/exec' y que la hoja de cálculo no esté congelada.");
-    }, 8000);
-
-    window[callbackName] = (data) => {
-        clearTimeout(timeoutId); // Cancelar el timeout si respondió
-        
-        console.log("Datos recibidos de Google:", data); // Ver en consola F12
-        
-        if(data && data.length > 0) {
-            const tx = this.db.transaction(["historicos"], "readwrite");
-            const store = tx.objectStore("historicos");
-            
-            data.forEach(item => {
-                item.syncStatus = "Sincronizado";
-                store.put(item);
-            });
-            
-            tx.oncomplete = () => {
-                this.cargarDatosLocales();
-                alert(`✅ ¡Conexión exitosa! Se cargaron ${data.length} registros desde el Sheets.`);
-                delete window[callbackName];
-                document.getElementById(callbackName).remove();
-            };
-        } else {
-            alert("⚠ Google Sheets respondió, pero la lista vino vacía. Revisa el nombre de la pestaña.");
-        }
-    };
-
-    const script = document.createElement('script');
-    script.id = callbackName;
-    script.src = `${GAS_API_URL}?action=read&callback=${callbackName}`;
-    script.onerror = (err) => {
-        clearTimeout(timeoutId);
-        alert("❌ Error crítico de red. El script de Google rechazó la conexión. Verifica si actualizaste la URL al hacer la nueva implementación.");
-    };
-    document.body.appendChild(script);
-}
-
-                async procesarColaPendientes() {
-                    const transaction = this.db.transaction(["historicos"], "readwrite");
-                    const store = transaction.objectStore("historicos");
-                    const getAll = store.getAll();
-
-                    getAll.onsuccess = async () => {
-                        const pendientes = getAll.result.filter(t => t.syncStatus === "Pendiente");
-                        for(let t of pendientes) {
-                            try {
-                                t.syncStatus = "Sincronizado";
-                                await fetch(GAS_API_URL, {
-                                    method: 'POST',
-                                    mode: 'no-cors',
-                                    headers: {'Content-Type': 'application/json'},
-                                    body: JSON.stringify(t)
-                                });
-                                store.put(t);
-                            } catch (e) {
-                                t.syncStatus = "Error";
-                                store.put(t);
-                            }
+                    try {
+                        const response = await fetch(URL_CSV_SHEETS);
+                        if (!response.ok) throw new Error("Google denegó el paquete de datos.");
+                        
+                        const csvText = await response.text();
+                        const filas = csvText.split(/\r?\n/);
+                        
+                        if (filas.length <= 1) {
+                            alert("El documento no contiene datos en las celdas.");
+                            return;
                         }
-                        this.cargarDatosLocales();
-                    };
+
+                        const registros = [];
+                        const limpiar = (val) => val ? val.replace(/^"|"$/g, '').trim() : '';
+
+                        for (let i = 1; i < filas.length; i++) {
+                            if (!filas[i].trim()) continue;
+                            
+                            // Separador inteligente que respeta comas internas en strings
+                            const row = filas[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || filas[i].split(',');
+                            
+                            if (!row || !row[0] || row[0].trim() === "") continue; 
+
+                            let obj = {
+                                dni: limpiar(row[0]),
+                                apellidosNombres: limpiar(row[1]),
+                                promedio: limpiar(row[2]),
+                                criterioGh: limpiar(row[3]),
+                                celularNisira: limpiar(row[4]),
+                                whatsappPlataforma: limpiar(row[5]),
+                                rutaNisira: limpiar(row[6]),
+                                rutaApp: limpiar(row[7]),
+                                estadoEmpadronamiento: limpiar(row[8]),
+                                activoFundo: limpiar(row[9]),
+                                modalidadFinal: limpiar(row[10]),
+                                alerta: limpiar(row[11]),
+                                syncStatus: "Sincronizado"
+                            };
+                            registros.push(obj);
+                        }
+
+                        const tx = this.db.transaction(["historicos"], "readwrite");
+                        const store = tx.objectStore("historicos");
+                        
+                        registros.forEach(item => store.put(item));
+                        
+                        tx.oncomplete = () => {
+                            this.cargarDatosLocales();
+                            alert(`✅ ¡Éxito! Base de datos actualizada con ${registros.length} cosechadores.`);
+                        };
+
+                    } catch (error) {
+                        console.error(error);
+                        alert("❌ Error de comunicación. Asegúrate de que el documento esté 'Publicado en la web' en formato CSV.");
+                    }
                 }
             }
         }
