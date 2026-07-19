@@ -25,7 +25,7 @@
         .online-badge { background-color: #10B981; }
     </style>
 </head>
-<body class="bg-gray-50 font-sans text-gray-800" x-data="appCosecha()" x-init="initDB()">
+<body class="bg-gray-50 font-sans text-gray-800" x-data="appCosecha()" x-init="initDB()" @scroll.window="detectarScroll()">
 
     <!-- NOTIFICACIONES DE ALERTA DE CONEXIÓN -->
     <div class="fixed top-5 right-5 z-50 space-y-2 max-w-sm w-full px-4 sm:px-0">
@@ -44,13 +44,15 @@
         </template>
     </div>
 
-    <!-- HEADER -->
-    <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-3 flex justify-between items-center">
+    <!-- HEADER CON LOGO INSERTADO -->
+    <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-2 flex justify-between items-center">
         <div class="flex items-center space-x-3">
-            <div class="bg-white rounded-full p-1 text-rojo-agricola text-xl w-10 h-10 flex items-center justify-center shadow-inner">🌾</div>
+            <div class="bg-white rounded-xl p-1 shadow-inner h-12 w-12 flex items-center justify-center overflow-hidden">
+                <img src="ICO FRUSAN.png" alt="Logo Frusan" class="h-full w-full object-contain">
+            </div>
             <div>
-                <h1 class="text-xl font-bold tracking-wider">Agrícola Huarmey | Fundo Frusan</h1>
-                <p class="text-xs text-red-100">Filtro del personal cosechero historico</p>
+                <h1 class="text-xl font-bold tracking-wider">Agrícola Huarmey</h1>
+                <p class="text-xs text-red-100">Base Mapeada de Cosecha</p>
             </div>
         </div>
         <div class="flex items-center space-x-2 bg-black/20 px-3 py-1.5 rounded-full">
@@ -81,19 +83,19 @@
             </div>
         </section>
         
-        <!-- BUSCADORES Y FILTROS MODIFICADOS -->
+        <!-- BUSCADORES Y FILTROS -->
         <section class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 class="text-lg font-bold text-gray-700">🔍 Filtros en Tiempo Real</h2>
                 <button @click="sincronizarConSheets()" class="w-full sm:w-auto bg-verde-natural text-white font-bold px-5 py-2.5 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2">
-                    <span>🔄 Sincronizar a la base de datos</span>
+                    <span>🔄 Sincronizar Google Sheets</span>
                 </button>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="lg:col-span-1">
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI, Nombre o Ruta</label>
-                    <input type="text" x-model="filtros.search" @input="filtrarDatos()" placeholder="Ej: 4432... o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
+                    <input type="text" x-model="filtros.search" @input.debounce.300ms="filtrarDatos()" placeholder="Ej: 4432... o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH)</label>
@@ -109,23 +111,24 @@
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Estado Empadronamiento</label>
                     <select x-model="filtros.estadoEmpadronamiento" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
-                        <option value="EMPADRONADO">EMPADRONADO</option>
-                        <option value="NO EMPADRONADO">NO EMPADRONADO</option>
+                        <option value="COMPLETO">COMPLETO</option>
+                        <option value="PENDIENTE">PENDIENTE</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Activo Fundo</label>
                     <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
-                        <option value="POR CONTACTAR">POR CONTACTAR</option>
-                            </select>
+                        <option value="SI">SI</option>
+                        <option value="NO">NO</option>
+                    </select>
                 </div>
             </div>
         </section>
 
-        <!-- MÓVIL (TARJETAS CON LAS 12 COLUMNAS) -->
+        <!-- MÓVIL (TARJETAS PAGINADAS) -->
         <section class="block lg:hidden space-y-4">
-            <template x-for="t in trabajadoresFiltrados" :key="t.dni">
+            <template x-for="t in trabajadoresPaginados" :key="t.dni">
                 <div class="bg-white rounded-2xl p-5 shadow-sm border-l-8 border border-gray-200 space-y-3" 
                      :class="t.alerta === 'OBSERVADO' ? 'border-l-red-500 bg-red-50/20' : 'border-l-green-600'">
                     
@@ -162,7 +165,7 @@
             </template>
         </section>
 
-        <!-- ESCRITORIO (TABLA COMPLETA CON LAS 12 COLUMNAS) -->
+        <!-- ESCRITORIO (TABLA COMPLETA CON LAS 12 COLUMNAS PAGINADAS) -->
         <section class="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left border-collapse whitespace-nowrap">
@@ -184,7 +187,7 @@
                         </tr>
                     </thead>
                     <tbody class="text-sm divide-y divide-gray-100">
-                        <template x-for="t in trabajadoresFiltrados" :key="t.dni">
+                        <template x-for="t in trabajadoresPaginados" :key="t.dni">
                             <tr class="hover:bg-gray-50 transition-colors" :class="t.alerta === 'OBSERVADO' ? 'bg-red-50/40' : ''">
                                 <td class="p-4 font-mono font-bold text-gray-700" x-text="t.dni"></td>
                                 <td class="p-4 font-semibold text-gray-900" x-text="t.apellidosNombres"></td>
@@ -213,10 +216,15 @@
                 </table>
             </div>
         </section>
+
+        <!-- Indicador de carga inferior -->
+        <div x-show="trabajadoresFiltrados.length > limiteElementos" class="text-center py-4 text-sm font-semibold text-gray-400 animate-pulse">
+            Cargando más registros automáticamente...
+        </div>
     </main>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzzMGjaYK0QJnFu7E_yz9FMj0TrcBaawZUaivO5PE-r1qkh1DZxoHVUPw6-bouaZJLcDg/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-J9PSJImrNMUkyOKIjTY2Qr-WkhzXdfuaaX7xz8AQebWyZoWrgymEQMjgUhA1t3-fhg/exec";
 
         function appCosecha() {
             return {
@@ -224,10 +232,11 @@
                 db: null,
                 todosLosTrabajadores: [],
                 trabajadoresFiltrados: [],
+                trabajadoresPaginados: [],
                 alertas: [],
-                // Filtros actualizados
                 filtros: { search: '', criterio: '', estadoEmpadronamiento: '', activoFundo: '' },
                 totalesCriterio: { malo: 0, regular: 0, bueno: 0, excelente: 0 },
+                limiteElementos: 50, // Lote de carga inicial para acelerar la app
 
                 agregarAlerta(mensaje, tipo = 'info') {
                     const id = Date.now();
@@ -278,9 +287,10 @@
                     });
                 },
 
-                // LÓGICA DE FILTRADO CORREGIDA
                 filtrarDatos() {
+                    this.limiteElementos = 50; // Reseteamos la paginación al cambiar filtros
                     let s = this.filtros.search.toLowerCase().trim();
+                    
                     this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
                         const matchSearch = t.dni.includes(s) || 
                                             t.apellidosNombres.toLowerCase().includes(s) || 
@@ -297,10 +307,25 @@
 
                         return matchSearch && matchCriterio && matchEmpadron && matchFundo;
                     });
+
+                    this.actualizarVistaPaginada();
+                },
+
+                actualizarVistaPaginada() {
+                    this.trabajadoresPaginados = this.trabajadoresFiltrados.slice(0, this.limiteElementos);
+                },
+
+                detectarScroll() {
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
+                        if (this.limiteElementos < this.trabajadoresFiltrados.length) {
+                            this.limiteElementos += 50; // Agrega 50 elementos más al hacer scroll abajo
+                            this.actualizarVistaPaginada();
+                        }
+                    }
                 },
 
                 enviarWhatsApp(t) {
-                    const mensaje = `Hola ${t.apellidosNombres}, te informamos de Agrícola Huarmey. Tu ruta asignada es: ${t.rutaApp}. Estado: ${t.alerta}.`;
+                    const mensaje = `Hola ${t.apellidosNombres}, te informamos de Agrícola Huarmey. Tu ruta asignada es: ${t.rutaApp}.`;
                     window.open(`https://api.whatsapp.com/send?phone=${t.celularNisira}&text=${encodeURIComponent(mensaje)}`, '_blank');
                 },
 
@@ -311,7 +336,6 @@
                     }
                     
                     this.agregarAlerta("🔄 Conectando al servidor de Google Sheets...", "info");
-                    
                     const callbackName = 'jsonp_mapeo_' + Math.round(100000 * Math.random());
                     
                     window[callbackName] = (data) => {
@@ -339,7 +363,7 @@
                     script.src = `${GAS_API_URL}?action=read&callback=${callbackName}`;
                     
                     script.onerror = () => {
-                        this.agregarAlerta("❌ Error al enlazar. Asegúrate de haber publicado el script como 'Cualquiera' (Anyone) en Google Sheets.", "error");
+                        this.agregarAlerta("❌ Error al enlazar. Asegúrate de haber publicado el script correctamente.", "error");
                         limpiarScript();
                     };
 
