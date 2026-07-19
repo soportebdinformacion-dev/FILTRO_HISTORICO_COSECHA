@@ -44,7 +44,7 @@
         </template>
     </div>
 
-    <!-- HEADER CON LOGO INSERTADO -->
+    <!-- HEADER CON LOGO Y BOTÓN DE INSTALAR -->
     <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-2 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <div class="bg-white rounded-xl p-1 shadow-inner h-12 w-12 flex items-center justify-center overflow-hidden">
@@ -55,9 +55,16 @@
                 <p class="text-xs text-red-100">Filtro Personal Historico Cosecha</p>
             </div>
         </div>
-        <div class="flex items-center space-x-2 bg-black/20 px-3 py-1.5 rounded-full">
-            <span :class="isOnline ? 'online-badge' : 'offline-badge'" class="h-2.5 w-2.5 rounded-full inline-block animate-pulse"></span>
-            <span class="text-xs font-bold uppercase tracking-wider" x-text="isOnline ? 'Conectado' : 'Modo Offline'"></span>
+        <div class="flex items-center space-x-3">
+            <!-- BOTÓN INSTALAR APP (Solo aparece si el navegador da el evento) -->
+            <button x-show="mostrarBotonInstalar" @click="instalarPWA()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-black px-3 py-1.5 rounded-xl shadow flex items-center space-x-1 transition-all">
+                <span>📥 Instalar App</span>
+            </button>
+
+            <div class="flex items-center space-x-2 bg-black/20 px-3 py-1.5 rounded-full">
+                <span :class="isOnline ? 'online-badge' : 'offline-badge'" class="h-2.5 w-2.5 rounded-full inline-block animate-pulse"></span>
+                <span class="text-xs font-bold uppercase tracking-wider" x-text="isOnline ? 'Conectado' : 'Modo Offline'"></span>
+            </div>
         </div>
     </header>
 
@@ -88,7 +95,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 class="text-lg font-bold text-gray-700">🔍 Filtros en Tiempo Real</h2>
                 <button @click="sincronizarConSheets()" class="w-full sm:w-auto bg-verde-natural text-white font-bold px-5 py-2.5 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2">
-                    <span>🔄 Sincronizar Google Sheets</span>
+                    <span>🔄 Sincronizar con la base datos</span>
                 </button>
             </div>
             
@@ -111,17 +118,16 @@
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Estado Empadronamiento</label>
                     <select x-model="filtros.estadoEmpadronamiento" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
-                        <option value="COMPLETO">COMPLETO</option>
-                        <option value="PENDIENTE">PENDIENTE</option>
+                        <option value="EMPADRONADO">EMPADRONADO</option>
+                        <option value="NO EMPADRONADO">NO EMPADRONADO</option>
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Activo Fundo</label>
                     <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
-                        <option value="SI">SI</option>
-                        <option value="NO">NO</option>
-                    </select>
+                        <option value="POR CONTACTAR">POR CONTACTAR</option>
+                                </select>
                 </div>
             </div>
         </section>
@@ -236,7 +242,9 @@
                 alertas: [],
                 filtros: { search: '', criterio: '', estadoEmpadronamiento: '', activoFundo: '' },
                 totalesCriterio: { malo: 0, regular: 0, bueno: 0, excelente: 0 },
-                limiteElementos: 50, // Lote de carga inicial para acelerar la app
+                limiteElementos: 50,
+                mostrarBotonInstalar: false,
+                deferredPrompt: null,
 
                 agregarAlerta(mensaje, tipo = 'info') {
                     const id = Date.now();
@@ -251,6 +259,20 @@
                     window.addEventListener('online', () => { this.isOnline = true; this.agregarAlerta("🟢 Conexión a Internet restablecida.", "success"); });
                     window.addEventListener('offline', () => { this.isOnline = false; this.agregarAlerta("🔴 Trabajando sin conexión a Internet.", "error"); });
 
+                    // Registrar el Service Worker automáticamente
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('./sw.js')
+                            .then(() => console.log('Service Worker Registrado Exitosamente.'))
+                            .catch(err => console.error('Error al registrar Service Worker', err));
+                    }
+
+                    // Capturar el evento de instalación nativo
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        this.deferredPrompt = e;
+                        this.mostrarBotonInstalar = true; // Hace visible el botón amarillo de instalación
+                    });
+
                     const request = indexedDB.open("AgricolaHuarmeyMasterDB", 1);
                     request.onupgradeneeded = (e) => {
                         let db = e.target.result;
@@ -262,6 +284,19 @@
                         this.db = e.target.result;
                         this.cargarDatosLocales();
                     };
+                },
+
+                instalarPWA() {
+                    if (this.deferredPrompt) {
+                        this.deferredPrompt.prompt();
+                        this.deferredPrompt.userChoice.then((choiceResult) => {
+                            if (choiceResult.outcome === 'accepted') {
+                                this.agregarAlerta("🎉 ¡Gracias por instalar la aplicación!", "success");
+                            }
+                            this.mostrarBotonInstalar = false;
+                            this.deferredPrompt = null;
+                        });
+                    }
                 },
 
                 cargarDatosLocales() {
@@ -288,7 +323,7 @@
                 },
 
                 filtrarDatos() {
-                    this.limiteElementos = 50; // Reseteamos la paginación al cambiar filtros
+                    this.limiteElementos = 50;
                     let s = this.filtros.search.toLowerCase().trim();
                     
                     this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
@@ -318,7 +353,7 @@
                 detectarScroll() {
                     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 200) {
                         if (this.limiteElementos < this.trabajadoresFiltrados.length) {
-                            this.limiteElementos += 50; // Agrega 50 elementos más al hacer scroll abajo
+                            this.limiteElementos += 50;
                             this.actualizarVistaPaginada();
                         }
                     }
