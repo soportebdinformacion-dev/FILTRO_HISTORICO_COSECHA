@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agrícola Huarmey - Histórico Cosecha</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#B91C1C">
+    <!-- Tailwind CSS & Alpine.js para UI responsiva y dinámica -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'rojo-agricola': '#B91C1C',
+                        'verde-natural': '#15803D',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .offline-badge { background-color: #EF4444; }
+        .online-badge { background-color: #10B981; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800" x-data="appCosecha()" x-init="initDB()">
+
+    <!-- HEADER / TOP BAR -->
+    <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <!-- Logo conceptual basado en la imagen provista (Fruta/Tierra estilizada) -->
+            <svg class="w-10 h-10 bg-white rounded-full p-1" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="55" r="35" stroke="#B91C1C" stroke-width="8"/>
+                <path d="M50 20 C65 20, 75 35, 75 55 C75 75, 55 85, 50 85 C35 85, 25 75, 25 55 C25 35, 35 20, 50 20 Z" fill="#B91C1C"/>
+                <path d="M48 22 C35 10, 60 5, 68 18 C55 10, 52 20, 48 22 Z" fill="#15803D"/>
+            </svg>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider">Agrícola Huarmey | Fundo Frusan</h1>
+                <p class="text-xs text-red-100">Filtro del Histórico de Cosechadores</p>
+            </div>
+        </div>
+        <!-- Conectividad -->
+        <div class="flex items-center space-x-2">
+            <span :class="isOnline ? 'online-badge' : 'offline-badge'" class="h-3 w-3 rounded-full inline-block animate-pulse"></span>
+            <span class="text-xs font-semibold uppercase tracking-wider" x-text="isOnline ? 'En Línea' : 'Modo Offline'"></span>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 space-y-6">
+        
+        <!-- SECCIÓN DE INDICADORES / TOTALES POR CRITERIO GH -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Tarjeta Excelente -->
+            <div class="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-wider opacity-90">🏆 Excelente</span>
+                    <span class="text-xl">🔥</span>
+                </div>
+                <p class="text-3xl font-black mt-2" x-text="totalesCriterio.excelente"></p>
+            </div>
+
+            <!-- Tarjeta Bueno -->
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-wider opacity-90">⭐ Bueno</span>
+                    <span class="text-xl">👍</span>
+                </div>
+                <p class="text-3xl font-black mt-2" x-text="totalesCriterio.bueno"></p>
+            </div>
+
+            <!-- Tarjeta Regular -->
+            <div class="bg-gradient-to-br from-yellow-500 to-amber-600 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-wider opacity-90">⚖️ Regular</span>
+                    <span class="text-xl">⚡</span>
+                </div>
+                <p class="text-3xl font-black mt-2" x-text="totalesCriterio.regular"></p>
+            </div>
+
+            <!-- Tarjeta Malo -->
+            <div class="bg-gradient-to-br from-red-600 to-rose-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between transition-transform hover:scale-105">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-wider opacity-90">⚠️ Malo</span>
+                    <span class="text-xl">🛑</span>
+                </div>
+                <p class="text-3xl font-black mt-2" x-text="totalesCriterio.malo"></p>
+            </div>
+        </section>
+        
+        <!-- SECCIÓN DE BÚSQUEDA Y FILTROS AVANZADOS -->
+        <section class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
+            <h2 class="text-lg font-bold text-gray-700 flex items-center">
+                🔍 Buscador y Filtros Avanzados
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Buscador Principal -->
+                <div class="md:col-span-2 lg:col-span-2">
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI o Nombres</label>
+                    <input type="text" x-model="filtros.search" @input="filtrarDatos()" placeholder="Ej. 45678912 o Juan Perez..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
+                </div>
+                <!-- Filtro Criterio GH -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH)</label>
+                    <select x-model="filtros.criterio" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
+                        <option value="">TODOS</option>
+                        <option value="EXCELENTE">EXCELENTE</option>
+                        <option value="BUENO">BUENO</option>
+                        <option value="REGULAR">REGULAR</option>
+                        <option value="MALO">MALO</option>
+                    </select>
+                </div>
+                <!-- Filtro Estado Empadronamiento -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Empadronamiento</label>
+                    <select x-model="filtros.estadoEmpadronamiento" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
+                        <option value="">TODOS</option>
+                        <option value="COMPLETO">COMPLETO</option>
+                        <option value="PENDIENTE">PENDIENTE</option>
+                    </select>
+                </div>
+                <!-- Filtro Activo Fundo -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Activo Fundo</label>
+                    <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
+                        <option value="">TODOS</option>
+                        <option value="SI">SÍ</option>
+                        <option value="NO">NO</option>
+                    </select>
+                </div>
+                <!-- Filtro Modalidad Final -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Modalidad Final</label>
+                    <select x-model="filtros.modalidadFinal" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
+                        <option value="">TODOS</option>
+                        <option value="DIRECTO">DIRECTO</option>
+                        <option value="TERCERO">TERCERO</option>
+                    </select>
+                </div>
+                <!-- Filtro Alerta -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Alerta</label>
+                    <select x-model="filtros.alerta" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola text-base">
+                        <option value="">TODOS</option>
+                        <option value="SIN ALERTA">SIN ALERTA</option>
+                        <option value="OBSERVADO">OBSERVADO</option>
+                    </select>
+                </div>
+                <!-- Botón Sync (JSONP Anti-CORS) -->
+                <div class="flex items-end">
+                    <button @click="sincronizarConSheets()" class="w-full bg-verde-natural text-white font-bold p-3 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2 text-base">
+                        <span>🔄 Sync Sheets</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA DE TARJETAS DINÁMICAS (MOBILE-FIRST) -->
+        <section class="block lg:hidden space-y-4">
+            <h3 class="text-md font-bold text-gray-600 px-1">Registros Encontrados (<span x-text="trabajadoresFiltrados.length"></span>)</h3>
+            <template x-for="t in trabajadoresFiltrados" :key="t.dni">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border-l-8 border border-gray-200 flex flex-col justify-between space-y-3"
+                     :class="t.alerta === 'OBSERVADO' ? 'border-l-red-500' : 'border-l-verde-natural'">
+                    
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600" x-text="'DNI: ' + t.dni"></span>
+                            <h4 class="text-lg font-bold text-gray-900 mt-1" x-text="t.apellidosNombres"></h4>
+                        </div>
+                        <span class="text-sm font-black px-2 py-1 rounded-lg bg-red-50 text-rojo-agricola" x-text="'Prom: ' + t.promedio"></span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-xs border-t border-b border-gray-100 py-2">
+                        <div><strong>Criterio GH:</strong> <span class="font-bold text-gray-700" x-text="t.criterioGh"></span></div>
+                        <div><strong>Celular:</strong> <span x-text="t.celularNisira"></span></div>
+                        <div><strong>Ruta App:</strong> <span x-text="t.rutaApp"></span></div>
+                        <div><strong>Fundo Activo:</strong> <span x-text="t.activoFundo"></span></div>
+                        <div><strong>Modalidad:</strong> <span x-text="t.modalidadFinal"></span></div>
+                        <div><strong>Status Local:</strong> 
+                            <span class="font-bold" :class="t.syncStatus === 'Sincronizado' ? 'text-green-600' : 'text-yellow-600'" x-text="t.syncStatus"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-2 pt-1">
+                        <button @click="enviarInvitacionWhatsApp(t)" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl text-center shadow flex items-center justify-center space-x-2 active:scale-95 transition-all text-sm">
+                            <span>💬 WhatsApp</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </section>
+
+        <!-- VISTA DE TABLA DINÁMICA (TABLET Y PC) -->
+        <section class="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto w-full">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 border-b border-gray-200 text-gray-600 text-xs font-bold uppercase tracking-wider">
+                            <th class="p-4">DNI</th>
+                            <th class="p-4">Apellidos y Nombres</th>
+                            <th class="p-4">Promedio</th>
+                            <th class="p-4">Criterio GH</th>
+                            <th class="p-4">Celular (Nisira)</th>
+                            <th class="p-4">Ruta App</th>
+                            <th class="p-4">Empadronamiento</th>
+                            <th class="p-4">Activo Fundo</th>
+                            <th class="p-4">Modalidad</th>
+                            <th class="p-4">Alerta</th>
+                            <th class="p-4">Sync</th>
+                            <th class="p-4 text-center">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100">
+                        <template x-for="t in trabajadoresFiltrados" :key="t.dni">
+                            <tr class="hover:bg-gray-50 transition-colors" :class="t.alerta === 'OBSERVADO' ? 'bg-red-50/50' : ''">
+                                <td class="p-4 font-mono font-bold" x-text="t.dni"></td>
+                                <td class="p-4 font-semibold text-gray-900" x-text="t.apellidosNombres"></td>
+                                <td class="p-4 font-bold text-rojo-agricola" x-text="t.promedio"></td>
+                                <td class="p-4 font-bold" x-text="t.criterioGh"></td>
+                                <td class="p-4" x-text="t.celularNisira"></td>
+                                <td class="p-4" x-text="t.rutaApp"></td>
+                                <td class="p-4" x-text="t.estadoEmpadronamiento"></td>
+                                <td class="p-4" x-text="t.activoFundo"></td>
+                                <td class="p-4" x-text="t.modalidadFinal"></td>
+                                <td class="p-4">
+                                    <span class="px-2 py-0.5 text-xs font-bold rounded-full" 
+                                          :class="t.alerta === 'OBSERVADO' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" x-text="t.alerta"></span>
+                                </td>
+                                <td class="p-4 font-medium text-xs" :class="t.syncStatus === 'Sincronizado' ? 'text-green-600' : 'text-yellow-600'" x-text="t.syncStatus"></td>
+                                <td class="p-4 text-center">
+                                    <button @click="enviarInvitacionWhatsApp(t)" class="bg-green-600 text-white font-bold px-3 py-1.5 rounded-lg shadow hover:bg-green-700 transition-all text-xs">
+                                        WhatsApp
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ¡IMPORTANTE! Reemplaza este ID por la URL de tu aplicación web publicada en Apps Script
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzN549Spe6Auzs-TS-R0OvgbqePLyF70yrMbSQTjK88VyJ5hABTssNxRgWfgDqJV-KbpA/exec";
+
+        function appCosecha() {
+            return {
+                isOnline: navigator.onLine,
+                db: null,
+                todosLosTrabajadores: [],
+                trabajadoresFiltrados: [],
+                filtros: {
+                    search: '',
+                    criterio: '',
+                    estadoEmpadronamiento: '',
+                    activoFundo: '',
+                    modalidadFinal: '',
+                    alerta: ''
+                },
+                totalesCriterio: {
+                    malo: 0,
+                    regular: 0,
+                    bueno: 0,
+                    excelente: 0
+                },
+
+                initDB() {
+                    window.addEventListener('online', () => { this.isOnline = true; this.procesarColaPendientes(); });
+                    window.addEventListener('offline', () => { this.isOnline = false; });
+
+                    const request = indexedDB.open("AgricolaHuarmeyDB", 1);
+                    request.onupgradeneeded = (e) => {
+                        let db = e.target.result;
+                        if (!db.objectStoreNames.contains("historicos")) {
+                            db.createObjectStore("historicos", { keyPath: "dni" });
+                        }
+                    };
+                    request.onsuccess = (e) => {
+                        this.db = e.target.result;
+                        this.cargarDatosLocales();
+                    };
+                },
+
+                cargarDatosLocales() {
+                    const transaction = this.db.transaction(["historicos"], "readonly");
+                    const store = transaction.objectStore("historicos");
+                    const getAll = store.getAll();
+                    
+                    getAll.onsuccess = () => {
+                        this.todosLosTrabajadores = getAll.result;
+                        this.calcularTotalesGlobales();
+                        this.filtrarDatos();
+                    };
+                },
+
+                calcularTotalesGlobales() {
+                    this.totalesCriterio.malo = 0;
+                    this.totalesCriterio.regular = 0;
+                    this.totalesCriterio.bueno = 0;
+                    this.totalesCriterio.excelente = 0;
+
+                    this.todosLosTrabajadores.forEach(t => {
+                        const crit = String(t.criterioGh).toUpperCase().trim();
+                        if (crit === 'MALO') this.totalesCriterio.malo++;
+                        else if (crit === 'REGULAR') this.totalesCriterio.regular++;
+                        else if (crit === 'BUENO') this.totalesCriterio.bueno++;
+                        else if (crit === 'EXCELENTE') this.totalesCriterio.excelente++;
+                    });
+                },
+
+                filtrarDatos() {
+                    let s = this.filtros.search.toLowerCase().trim();
+                    this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
+                        const matchSearch = t.dni.includes(s) || t.apellidosNombres.toLowerCase().includes(s);
+                        const matchCriterio = this.filtros.criterio === '' || String(t.criterioGh).toUpperCase().trim() === this.filtros.criterio;
+                        const matchEmpadronamiento = this.filtros.estadoEmpadronamiento === '' || t.estadoEmpadronamiento === this.filtros.estadoEmpadronamiento;
+                        const matchActivo = this.filtros.activoFundo === '' || t.activoFundo === this.filtros.activoFundo;
+                        const matchModalidad = this.filtros.modalidadFinal === '' || t.modalidadFinal === this.filtros.modalidadFinal;
+                        const matchAlerta = this.filtros.alerta === '' || t.alerta === this.filtros.alerta;
+
+                        return matchSearch && matchCriterio && matchEmpadronamiento && matchActivo && matchModalidad && matchAlerta;
+                    });
+                },
+
+                enviarInvitacionWhatsApp(t) {
+                    const msg = `¡Hola, ${t.apellidosNombres}! 🌿 Te saluda Agrícola Huarmey. Queremos invitarte formalmente a iniciar nuestra gran campaña de Cosecha de Arándanos 🍇. Tu desempeño histórico nos respalda (Criterio: ${t.criterioGh}). Tu ruta asignada es: ${t.rutaApp}. ¡Te esperamos!`;
+                    const url = `https://api.whatsapp.com/send?phone=${t.whatsappPlataforma}&text=${encodeURIComponent(msg)}`;
+                    
+                    t.syncStatus = "Pendiente";
+                    this.guardarEnIndexedDB(t);
+                    window.open(url, '_blank');
+                    
+                    if (this.isOnline) {
+                        this.sincronizarConSheets();
+                    }
+                },
+
+                guardarEnIndexedDB(item) {
+                    const tx = this.db.transaction(["historicos"], "readwrite");
+                    tx.objectStore("historicos").put(item);
+                },
+
+                // SOLUCIÓN DEFINITIVA ANTI-CORS (JSONP BRIDGE)
+
+     async sincronizarConSheets() {
+    if (!this.isOnline) {
+        alert("⚠️ Estás offline. Conéctate a internet para sincronizar.");
+        return;
+    }
+    
+    const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+    
+    // Alerta de depuración para saber si el script se colgó antes de responder
+    const timeoutId = setTimeout(() => {
+        alert("⏱️ La conexión tardó demasiado. Verifica que la URL del script termine en '/exec' y que la hoja de cálculo no esté congelada.");
+    }, 8000);
+
+    window[callbackName] = (data) => {
+        clearTimeout(timeoutId); // Cancelar el timeout si respondió
+        
+        console.log("Datos recibidos de Google:", data); // Ver en consola F12
+        
+        if(data && data.length > 0) {
+            const tx = this.db.transaction(["historicos"], "readwrite");
+            const store = tx.objectStore("historicos");
+            
+            data.forEach(item => {
+                item.syncStatus = "Sincronizado";
+                store.put(item);
+            });
+            
+            tx.oncomplete = () => {
+                this.cargarDatosLocales();
+                alert(`✅ ¡Conexión exitosa! Se cargaron ${data.length} registros desde el Sheets.`);
+                delete window[callbackName];
+                document.getElementById(callbackName).remove();
+            };
+        } else {
+            alert("⚠ Google Sheets respondió, pero la lista vino vacía. Revisa el nombre de la pestaña.");
+        }
+    };
+
+    const script = document.createElement('script');
+    script.id = callbackName;
+    script.src = `${GAS_API_URL}?action=read&callback=${callbackName}`;
+    script.onerror = (err) => {
+        clearTimeout(timeoutId);
+        alert("❌ Error crítico de red. El script de Google rechazó la conexión. Verifica si actualizaste la URL al hacer la nueva implementación.");
+    };
+    document.body.appendChild(script);
+}
+
+                async procesarColaPendientes() {
+                    const transaction = this.db.transaction(["historicos"], "readwrite");
+                    const store = transaction.objectStore("historicos");
+                    const getAll = store.getAll();
+
+                    getAll.onsuccess = async () => {
+                        const pendientes = getAll.result.filter(t => t.syncStatus === "Pendiente");
+                        for(let t of pendientes) {
+                            try {
+                                t.syncStatus = "Sincronizado";
+                                await fetch(GAS_API_URL, {
+                                    method: 'POST',
+                                    mode: 'no-cors',
+                                    headers: {'Content-Type': 'application/json'},
+                                    body: JSON.stringify(t)
+                                });
+                                store.put(t);
+                            } catch (e) {
+                                t.syncStatus = "Error";
+                                store.put(t);
+                            }
+                        }
+                        this.cargarDatosLocales();
+                    };
+                }
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js');
+            });
+        }
+    </script>
+</body>
+</html>
