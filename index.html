@@ -165,7 +165,10 @@
                     <div class="grid grid-cols-2 gap-x-2 gap-y-3 text-xs text-gray-600">
                         <div>
                             <span class="text-gray-400 block text-[10px] uppercase font-bold">Criterio (GH)</span> 
-                            <span class="font-black" x-text="t.criterioGh"></span>
+                            <!-- FORMATO COLOR EN CRITERIO GH (MÓVIL) -->
+                            <span class="font-black px-2 py-0.5 rounded-md inline-block mt-0.5" 
+                                  :class="obtenerClaseCriterio(t.criterioGh)" 
+                                  x-text="t.criterioGh"></span>
                         </div>
                         <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Celular</span> <span class="font-medium text-gray-900" x-text="t.celularNisira"></span></div>
                         <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Ruta (App)</span> <span class="font-bold text-emerald-700" x-text="t.rutaApp"></span></div>
@@ -207,7 +210,14 @@
                                 <td class="p-4 font-mono font-bold text-gray-700" x-text="t.dni"></td>
                                 <td class="p-4 font-semibold text-gray-900" x-text="t.apellidosNombres"></td>
                                 <td class="p-4 text-rojo-agricola font-black" x-text="t.promedio"></td>
-                                <td class="p-4 font-black" x-text="t.criterioGh"></td>
+                                
+                                <!-- FORMATO COLOR EN CRITERIO GH (ESCRITORIO) -->
+                                <td class="p-4">
+                                    <span class="px-2.5 py-1 text-xs font-black rounded-lg inline-block" 
+                                          :class="obtenerClaseCriterio(t.criterioGh)" 
+                                          x-text="t.criterioGh"></span>
+                                </td>
+
                                 <td class="p-4 text-gray-600" x-text="t.celularNisira"></td>
                                 <td class="p-4 text-gray-500" x-text="t.whatsappPlataforma"></td>
                                 <td class="p-4 text-gray-500" x-text="t.rutaNisira"></td>
@@ -240,7 +250,7 @@
     </main>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyW3iefWwfDKJQQA9Vd-KDgiBm9DlGgAjvXNEt_O0P2OiVK2keG2B4IzXwtvHgf1AaU9A/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-J9PSJImrNMUkyOKIjTY2Qr-WkhzXdfuaaX7xz8AQebWyZoWrgymEQMjgUhA1t3-fhg/exec";
 
         function appCosecha() {
             return {
@@ -255,6 +265,16 @@
                 totalesCriterio: { malo: 0, regular: 0, bueno: 0, excelente: 0 },
                 limiteElementos: 50,
                 mostrarBotonInstalar: false,
+
+                // FUNCIÓN PARA ASIGNAR COLORES SEGÚN EL CRITERIO GH
+                obtenerClaseCriterio(criterio) {
+                    const c = String(criterio || '').toUpperCase().trim();
+                    if (c.includes('EXCELENTE')) return 'bg-emerald-100 text-emerald-700 border border-emerald-300';
+                    if (c.includes('BUENO')) return 'bg-blue-100 text-blue-700 border border-blue-300';
+                    if (c.includes('REGULAR')) return 'bg-amber-100 text-amber-700 border border-amber-300';
+                    if (c.includes('MALO')) return 'bg-red-100 text-red-700 border border-red-300';
+                    return 'bg-gray-100 text-gray-700';
+                },
 
                 agregarAlerta(mensaje, tipo = 'info') {
                     const id = Date.now();
@@ -321,7 +341,6 @@
                     this.limiteElementos = 50;
                     let s = this.filtros.search.toLowerCase().trim();
                     
-                    // Normalizar término ingresado (con y sin ceros)
                     let sSinCeros = s.replace(/^0+/, ''); 
                     let sConCeros8 = sSinCeros.length > 0 && sSinCeros.length <= 8 ? sSinCeros.padStart(8, '0') : s;
 
@@ -333,7 +352,6 @@
                         const apellidosNombres = String(t.apellidosNombres || '').toLowerCase();
                         const rutaApp = String(t.rutaApp || '').toLowerCase();
 
-                        // COMPROBACIÓN FLEXIBLE DE DNI
                         let matchDNI = false;
                         if (s !== '') {
                             matchDNI = dniDb.includes(s) || 
@@ -415,7 +433,6 @@
                             const tx = this.db.transaction(["historicos"], "readwrite");
                             const store = tx.objectStore("historicos");
 
-                            // Limpiar base local antes de insertar para asegurar que todos vengan con el nuevo formato DNI
                             store.clear().onsuccess = () => {
                                 data.forEach(item => store.put(item));
                             };
@@ -423,7 +440,7 @@
                             tx.oncomplete = () => {
                                 this.cargarDatosLocales();
                                 this.cargando = false;
-                                this.agregarAlerta(`✅ Sincronizados ${data.length} registros con ceros formateados.`, "success");
+                                this.agregarAlerta(`✅ Sincronizados ${data.length} registros correctamente.`, "success");
                                 limpiarScript();
                             };
                         } else {
