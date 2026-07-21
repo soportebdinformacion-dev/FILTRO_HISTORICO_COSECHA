@@ -8,6 +8,7 @@
     <meta name="theme-color" content="#B91C1C">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Librería para exportar a Excel nativamente -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script>
         tailwind.config = {
@@ -24,18 +25,19 @@
     <style>
         .offline-badge { background-color: #EF4444; }
         .online-badge { background-color: #10B981; }
+        .sync-badge { background-color: #F59E0B; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800" x-data="appCosecha()" x-init="initDB()" @scroll.window="detectarScroll()">
 
-    <!-- NOTIFICACIONES -->
+    <!-- NOTIFICACIONES DE ALERTA DE CONEXIÓN -->
     <div class="fixed top-5 right-5 z-50 space-y-2 max-w-sm w-full px-4 sm:px-0">
         <template x-for="alerta in alertas" :key="alerta.id">
             <div :class="{
                 'bg-green-600 text-white': alerta.tipo === 'success',
                 'bg-blue-600 text-white': alerta.tipo === 'info',
                 'bg-red-600 text-white': alerta.tipo === 'error'
-            }" class="p-4 rounded-xl shadow-xl flex items-center justify-between space-x-2 transition-all duration-300">
+            }" class="p-4 rounded-xl shadow-xl flex items-center justify-between space-x-2 transition-all duration-300 transform translate-y-0">
                 <div class="flex items-center space-x-2">
                     <span x-text="alerta.tipo === 'info' ? '🔄' : (alerta.tipo === 'success' ? '✅' : '❌')"></span>
                     <span class="text-sm font-bold" x-text="alerta.mensaje"></span>
@@ -45,7 +47,7 @@
         </template>
     </div>
 
-    <!-- HEADER -->
+    <!-- HEADER CON LOGO Y BOTÓN DE INSTALAR -->
     <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-2 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <div class="bg-white rounded-xl p-1 shadow-inner h-12 w-12 flex items-center justify-center overflow-hidden">
@@ -57,20 +59,27 @@
             </div>
         </div>
         <div class="flex items-center space-x-3">
-            <button x-show="mostrarBotonInstalar" @click="instalarPWA()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-black px-3 py-1.5 rounded-xl shadow flex items-center space-x-1">
+            <!-- BOTÓN INSTALAR APP -->
+            <button x-show="mostrarBotonInstalar" @click="instalarPWA()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-black px-3 py-1.5 rounded-xl shadow flex items-center space-x-1 transition-all">
                 <span>📥 Instalar App</span>
             </button>
 
+            <!-- ESTADO DE CONEXIÓN DINÁMICO -->
             <div class="flex items-center space-x-2 bg-black/20 px-3 py-1.5 rounded-full">
-                <span :class="isOnline ? 'online-badge' : 'offline-badge'" class="h-2.5 w-2.5 rounded-full inline-block animate-pulse"></span>
-                <span class="text-xs font-bold uppercase tracking-wider" x-text="isOnline ? 'Conectado' : 'Modo Offline'"></span>
+                <span :class="{
+                    'online-badge': isOnline && !cargando,
+                    'sync-badge': isOnline && cargando,
+                    'offline-badge': !isOnline
+                }" class="h-2.5 w-2.5 rounded-full inline-block animate-pulse"></span>
+                <span class="text-xs font-bold uppercase tracking-wider" 
+                      x-text="!isOnline ? 'Modo Offline' : (cargando ? 'Sincronizando...' : 'Conectado')"></span>
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto p-4 space-y-6">
         
-        <!-- RESUMEN DE CRITERIOS -->
+        <!-- RESUMEN DE CRITERIOS GH -->
         <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between">
                 <div class="flex justify-between items-center"><span class="text-xs font-bold uppercase tracking-wider">🏆 Excelente</span><span>🔥</span></div>
@@ -90,7 +99,7 @@
             </div>
         </section>
         
-        <!-- FILTROS Y CONTROLES -->
+        <!-- BUSCADORES Y FILTROS -->
         <section class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 space-y-4">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 class="text-lg font-bold text-gray-700">🔍 Filtros en Tiempo Real</h2>
@@ -99,7 +108,7 @@
                         <span>📥 Exportar Excel</span>
                     </button>
                     <button @click="sincronizarConSheets()" class="w-full sm:w-auto bg-verde-natural text-white font-bold px-5 py-2.5 rounded-xl shadow hover:bg-green-800 transition-all flex items-center justify-center space-x-2">
-                        <span x-text="cargando ? '⌛ Cargando...' : '🔄 Conectar a la BD Históricos'"></span>
+                        <span x-text="cargando ? '⌛ Sincronizando...' : '🔄 Sincronizar Manual'"></span>
                     </button>
                 </div>
             </div>
@@ -107,7 +116,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="lg:col-span-1">
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI, Nombre o Ruta</label>
-                    <input type="text" x-model="filtros.search" @input.debounce.300ms="filtrarDatos()" placeholder="Ej: 4432... o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
+                    <input type="text" x-model="filtros.search" @input.debounce.300ms="filtrarDatos()" placeholder="Ej: 004432... o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH)</label>
@@ -137,7 +146,7 @@
             </div>
         </section>
 
-        <!-- MÓVIL (TARJETAS) -->
+        <!-- MÓVIL (TARJETAS PAGINADAS) -->
         <section class="block lg:hidden space-y-4">
             <template x-for="t in trabajadoresPaginados" :key="t.dni">
                 <div class="bg-white rounded-2xl p-5 shadow-sm border-l-8 border border-gray-200 space-y-3" 
@@ -226,14 +235,13 @@
 
         <!-- MENSAJE DE TABLA VACÍA -->
         <div x-show="trabajadoresFiltrados.length === 0 && !cargando" class="text-center py-12 bg-white rounded-2xl shadow-sm">
-            <p class="text-gray-400 font-bold text-base">⚠️ No se encontraron datos almacenados o cargados.</p>
-            <p class="text-xs text-gray-400 mt-1">Presiona "Conectar a la BD Históricos" para sincronizar.</p>
+            <p class="text-gray-400 font-bold text-base">⚠️ No se encontraron coincidencias o registros guardados.</p>
         </div>
 
     </main>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzSs--C5Ym7RZFqrduxIzrMmzI_P_gmmRo1TGT-82ostHnyjfpVA5Hxrj17E7uMPSwW9A/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-J9PSJImrNMUkyOKIjTY2Qr-WkhzXdfuaaX7xz8AQebWyZoWrgymEQMjgUhA1t3-fhg/exec";
 
         function appCosecha() {
             return {
@@ -260,8 +268,15 @@
                 },
 
                 initDB() {
-                    window.addEventListener('online', () => { this.isOnline = true; });
-                    window.addEventListener('offline', () => { this.isOnline = false; });
+                    window.addEventListener('online', () => { 
+                        this.isOnline = true; 
+                        this.agregarAlerta("🟢 Conexión restablecida. Sincronizando...", "success");
+                        this.sincronizarConSheets();
+                    });
+                    window.addEventListener('offline', () => { 
+                        this.isOnline = false; 
+                        this.agregarAlerta("🔴 Modo Offline activado.", "error");
+                    });
 
                     const request = indexedDB.open("AgricolaHuarmeyMasterDB", 1);
                     request.onupgradeneeded = (e) => {
@@ -274,7 +289,7 @@
                         this.db = e.target.result;
                         this.cargarDatosLocales();
                         
-                        // SI HAY CONEXIÓN Y ESTÁ VACÍO, PROCURAR CARGAR DE UNA VEZ
+                        // AUTO CONECTAR AL INICIAR SI HAY INTERNET
                         if (this.isOnline) {
                             this.sincronizarConSheets();
                         }
@@ -309,11 +324,19 @@
                     let s = this.filtros.search.toLowerCase().trim();
                     
                     this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
-                        const dni = String(t.dni || '');
+                        let dniOriginal = String(t.dni || '').trim();
+                        // Generar la versión formateada con ceros a 8 dígitos para búsqueda flexible
+                        let dniPadded = dniOriginal.length < 8 ? dniOriginal.padStart(8, '0') : dniOriginal;
+                        
                         const apellidosNombres = String(t.apellidosNombres || '').toLowerCase();
                         const rutaApp = String(t.rutaApp || '').toLowerCase();
 
-                        const matchSearch = dni.includes(s) || apellidosNombres.includes(s) || rutaApp.includes(s);
+                        // Buscar tanto en el DNI original como en el DNI formateado con ceros
+                        const matchSearch = dniOriginal.includes(s) || 
+                                             dniPadded.includes(s) || 
+                                             apellidosNombres.includes(s) || 
+                                             rutaApp.includes(s);
+
                         const matchCriterio = this.filtros.criterio === '' || String(t.criterioGh || '').toUpperCase().trim() === this.filtros.criterio;
                         const matchEmpadron = this.filtros.estadoEmpadronamiento === '' || String(t.estadoEmpadronamiento || '').toUpperCase().trim() === this.filtros.estadoEmpadronamiento;
                         const matchFundo = this.filtros.activoFundo === '' || String(t.activoFundo || '').toUpperCase().trim() === this.filtros.activoFundo;
@@ -370,20 +393,17 @@
                     this.agregarAlerta("✅ ¡Exportación completada!", "success");
                 },
 
-                async sincronizarConSheets() {
+                sincronizarConSheets() {
                     if (!this.isOnline) {
                         this.agregarAlerta("⚠️ Sin conexión a Internet.", "error");
                         return;
                     }
 
                     this.cargando = true;
-                    this.agregarAlerta("🔄 Conectando a Google Sheets...", "info");
+                    const callbackName = 'jsonp_cb_' + Math.round(100000 * Math.random());
 
-                    try {
-                        const response = await fetch(`${GAS_API_URL}?action=read`);
-                        const data = await response.json();
-
-                        if (Array.isArray(data) && data.length > 0) {
+                    window[callbackName] = (data) => {
+                        if (data && Array.isArray(data) && data.length > 0) {
                             const tx = this.db.transaction(["historicos"], "readwrite");
                             const store = tx.objectStore("historicos");
 
@@ -392,17 +412,33 @@
                             tx.oncomplete = () => {
                                 this.cargarDatosLocales();
                                 this.cargando = false;
-                                this.agregarAlerta(`✅ Se cargaron ${data.length} registros correctamente.`, "success");
+                                this.agregarAlerta(`✅ ¡Sincronizado! ${data.length} registros cargados.`, "success");
+                                limpiarScript();
                             };
                         } else {
                             this.cargando = false;
-                            this.agregarAlerta("⚠️ La hoja no contiene registros válidos.", "error");
+                            this.agregarAlerta("⚠️ No se obtuvieron filas válidas de la hoja.", "error");
+                            limpiarScript();
                         }
-                    } catch (error) {
-                        console.error(error);
+                    };
+
+                    const script = document.createElement('script');
+                    script.id = callbackName;
+                    script.src = `${GAS_API_URL}?action=read&callback=${callbackName}`;
+                    
+                    script.onerror = () => {
                         this.cargando = false;
-                        this.agregarAlerta("❌ Error al conectar. Verifica los permisos de tu Script.", "error");
+                        this.agregarAlerta("❌ Error de conexión con Google Sheets.", "error");
+                        limpiarScript();
+                    };
+
+                    function limpiarScript() {
+                        delete window[callbackName];
+                        const el = document.getElementById(callbackName);
+                        if (el) el.remove();
                     }
+
+                    document.body.appendChild(script);
                 }
             }
         }
