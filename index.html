@@ -37,7 +37,7 @@
                 'bg-green-600 text-white': alerta.tipo === 'success',
                 'bg-blue-600 text-white': alerta.tipo === 'info',
                 'bg-red-600 text-white': alerta.tipo === 'error'
-            }" class="p-4 rounded-xl shadow-xl flex items-center justify-between space-x-2 transition-all duration-300 transform translate-y-0">
+            }" class="p-4 rounded-xl shadow-xl flex items-center justify-between space-x-2 transition-all duration-300">
                 <div class="flex items-center space-x-2">
                     <span x-text="alerta.tipo === 'info' ? '🔄' : (alerta.tipo === 'success' ? '✅' : '❌')"></span>
                     <span class="text-sm font-bold" x-text="alerta.mensaje"></span>
@@ -47,7 +47,7 @@
         </template>
     </div>
 
-    <!-- HEADER CON LOGO Y BOTÓN DE INSTALAR -->
+    <!-- HEADER CON LOGO Y ESTADO DE CONEXIÓN -->
     <header class="bg-rojo-agricola text-white shadow-md sticky top-0 z-50 px-4 py-2 flex justify-between items-center">
         <div class="flex items-center space-x-3">
             <div class="bg-white rounded-xl p-1 shadow-inner h-12 w-12 flex items-center justify-center overflow-hidden">
@@ -59,7 +59,6 @@
             </div>
         </div>
         <div class="flex items-center space-x-3">
-            <!-- BOTÓN INSTALAR APP -->
             <button x-show="mostrarBotonInstalar" @click="instalarPWA()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-black px-3 py-1.5 rounded-xl shadow flex items-center space-x-1 transition-all">
                 <span>📥 Instalar App</span>
             </button>
@@ -116,7 +115,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="lg:col-span-1">
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI, Nombre o Ruta</label>
-                    <input type="text" x-model="filtros.search" @input.debounce.300ms="filtrarDatos()" placeholder="Ej: 004432... o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
+                    <input type="text" x-model="filtros.search" @input.debounce.200ms="filtrarDatos()" placeholder="Ej: 00805859 o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH)</label>
@@ -235,13 +234,13 @@
 
         <!-- MENSAJE DE TABLA VACÍA -->
         <div x-show="trabajadoresFiltrados.length === 0 && !cargando" class="text-center py-12 bg-white rounded-2xl shadow-sm">
-            <p class="text-gray-400 font-bold text-base">⚠️ No se encontraron coincidencias o registros guardados.</p>
+            <p class="text-gray-400 font-bold text-base">⚠️ No se encontraron coincidencias.</p>
         </div>
 
     </main>
 
     <script>
-        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbz-J9PSJImrNMUkyOKIjTY2Qr-WkhzXdfuaaX7xz8AQebWyZoWrgymEQMjgUhA1t3-fhg/exec";
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyW3iefWwfDKJQQA9Vd-KDgiBm9DlGgAjvXNEt_O0P2OiVK2keG2B4IzXwtvHgf1AaU9A/exec";
 
         function appCosecha() {
             return {
@@ -256,7 +255,6 @@
                 totalesCriterio: { malo: 0, regular: 0, bueno: 0, excelente: 0 },
                 limiteElementos: 50,
                 mostrarBotonInstalar: false,
-                deferredPrompt: null,
 
                 agregarAlerta(mensaje, tipo = 'info') {
                     const id = Date.now();
@@ -323,19 +321,29 @@
                     this.limiteElementos = 50;
                     let s = this.filtros.search.toLowerCase().trim();
                     
+                    // Normalizar término ingresado (con y sin ceros)
+                    let sSinCeros = s.replace(/^0+/, ''); 
+                    let sConCeros8 = sSinCeros.length > 0 && sSinCeros.length <= 8 ? sSinCeros.padStart(8, '0') : s;
+
                     this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
-                        let dniOriginal = String(t.dni || '').trim();
-                        // Generar la versión formateada con ceros a 8 dígitos para búsqueda flexible
-                        let dniPadded = dniOriginal.length < 8 ? dniOriginal.padStart(8, '0') : dniOriginal;
-                        
+                        let dniDb = String(t.dni || '').trim();
+                        let dniDbSinCeros = dniDb.replace(/^0+/, '');
+                        let dniDbConCeros8 = dniDbSinCeros.length > 0 && dniDbSinCeros.length <= 8 ? dniDbSinCeros.padStart(8, '0') : dniDb;
+
                         const apellidosNombres = String(t.apellidosNombres || '').toLowerCase();
                         const rutaApp = String(t.rutaApp || '').toLowerCase();
 
-                        // Buscar tanto en el DNI original como en el DNI formateado con ceros
-                        const matchSearch = dniOriginal.includes(s) || 
-                                             dniPadded.includes(s) || 
-                                             apellidosNombres.includes(s) || 
-                                             rutaApp.includes(s);
+                        // COMPROBACIÓN FLEXIBLE DE DNI
+                        let matchDNI = false;
+                        if (s !== '') {
+                            matchDNI = dniDb.includes(s) || 
+                                       dniDbConCeros8.includes(s) || 
+                                       dniDbSinCeros.includes(s) ||
+                                       dniDb.includes(sSinCeros) || 
+                                       dniDbConCeros8.includes(sConCeros8);
+                        }
+
+                        const matchSearch = s === '' || matchDNI || apellidosNombres.includes(s) || rutaApp.includes(s);
 
                         const matchCriterio = this.filtros.criterio === '' || String(t.criterioGh || '').toUpperCase().trim() === this.filtros.criterio;
                         const matchEmpadron = this.filtros.estadoEmpadronamiento === '' || String(t.estadoEmpadronamiento || '').toUpperCase().trim() === this.filtros.estadoEmpadronamiento;
@@ -407,12 +415,15 @@
                             const tx = this.db.transaction(["historicos"], "readwrite");
                             const store = tx.objectStore("historicos");
 
-                            data.forEach(item => store.put(item));
+                            // Limpiar base local antes de insertar para asegurar que todos vengan con el nuevo formato DNI
+                            store.clear().onsuccess = () => {
+                                data.forEach(item => store.put(item));
+                            };
 
                             tx.oncomplete = () => {
                                 this.cargarDatosLocales();
                                 this.cargando = false;
-                                this.agregarAlerta(`✅ ¡Sincronizado! ${data.length} registros cargados.`, "success");
+                                this.agregarAlerta(`✅ Sincronizados ${data.length} registros con ceros formateados.`, "success");
                                 limpiarScript();
                             };
                         } else {
