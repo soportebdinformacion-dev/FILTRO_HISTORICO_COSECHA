@@ -58,7 +58,7 @@
             </div>
         </div>
         <div class="flex items-center space-x-3">
-            <!-- BOTÓN INSTALAR APP (Solo aparece si el navegador da el evento) -->
+            <!-- BOTÓN INSTALAR APP -->
             <button x-show="mostrarBotonInstalar" @click="instalarPWA()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xs font-black px-3 py-1.5 rounded-xl shadow flex items-center space-x-1 transition-all">
                 <span>📥 Instalar App</span>
             </button>
@@ -189,7 +189,7 @@
             </template>
         </section>
 
-        <!-- ESCRITORIO (TABLA COMPLETA CON LAS 12 COLUMNAS PAGINADAS) -->
+        <!-- ESCRITORIO (TABLA COMPLETA) -->
         <section class="hidden lg:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="overflow-x-auto w-full">
                 <table class="w-full text-left border-collapse whitespace-nowrap">
@@ -284,14 +284,12 @@
                     window.addEventListener('online', () => { this.isOnline = true; this.agregarAlerta("🟢 Conexión a Internet restablecida.", "success"); });
                     window.addEventListener('offline', () => { this.isOnline = false; this.agregarAlerta("🔴 Trabajando sin conexión a Internet.", "error"); });
 
-                    // Registrar el Service Worker automáticamente
                     if ('serviceWorker' in navigator) {
                         navigator.serviceWorker.register('./sw.js')
                             .then(() => console.log('Service Worker Registrado Exitosamente.'))
                             .catch(err => console.error('Error al registrar Service Worker', err));
                     }
 
-                    // Capturar el evento de instalación nativo
                     window.addEventListener('beforeinstallprompt', (e) => {
                         e.preventDefault();
                         this.deferredPrompt = e;
@@ -339,7 +337,7 @@
                 calcularTotalesGlobales() {
                     this.totalesCriterio = { malo: 0, regular: 0, bueno: 0, excelente: 0 };
                     this.todosLosTrabajadores.forEach(t => {
-                        const crit = String(t.criterioGh).toUpperCase().trim();
+                        const crit = String(t.criterioGh || '').toUpperCase().trim();
                         if (crit.includes('MALO')) this.totalesCriterio.malo++;
                         if (crit.includes('REGULAR')) this.totalesCriterio.regular++;
                         if (crit.includes('BUENO')) this.totalesCriterio.bueno++;
@@ -352,18 +350,20 @@
                     let s = this.filtros.search.toLowerCase().trim();
                     
                     this.trabajadoresFiltrados = this.todosLosTrabajadores.filter(t => {
-                        const matchSearch = t.dni.includes(s) || 
-                                             t.apellidosNombres.toLowerCase().includes(s) || 
-                                             t.rutaApp.toLowerCase().includes(s);
+                        const dni = String(t.dni || '');
+                        const apellidosNombres = String(t.apellidosNombres || '').toLowerCase();
+                        const rutaApp = String(t.rutaApp || '').toLowerCase();
+
+                        const matchSearch = dni.includes(s) || apellidosNombres.includes(s) || rutaApp.includes(s);
                         
                         const matchCriterio = this.filtros.criterio === '' || 
-                                              String(t.criterioGh).toUpperCase().trim() === this.filtros.criterio;
+                                              String(t.criterioGh || '').toUpperCase().trim() === this.filtros.criterio;
                         
                         const matchEmpadron = this.filtros.estadoEmpadronamiento === '' || 
-                                              String(t.estadoEmpadronamiento).toUpperCase().trim() === this.filtros.estadoEmpadronamiento;
+                                              String(t.estadoEmpadronamiento || '').toUpperCase().trim() === this.filtros.estadoEmpadronamiento;
                         
                         const matchFundo = this.filtros.activoFundo === '' || 
-                                           String(t.activoFundo).toUpperCase().trim() === this.filtros.activoFundo;
+                                           String(t.activoFundo || '').toUpperCase().trim() === this.filtros.activoFundo;
 
                         return matchSearch && matchCriterio && matchEmpadron && matchFundo;
                     });
@@ -414,9 +414,9 @@
 
                     const hoja = XLSX.utils.json_to_sheet(datosExcel);
                     const libro = XLSX.utils.book_new();
-                    XXLSX.utils.book_append_sheet(libro, hoja, "Empadronamiento");
+                    XLSX.utils.book_append_sheet(libro, hoja, "Empadronamiento");
                     
-                    XXLSX.writeFile(libro, "Reporte_empadronamiento.xlsx");
+                    XLSX.writeFile(libro, "Reporte_empadronamiento.xlsx");
                     this.agregarAlerta("✅ ¡Descarga Completa exitosamente!", "success");
                 },
 
@@ -454,7 +454,7 @@
                     script.src = `${GAS_API_URL}?action=read&callback=${callbackName}`;
                     
                     script.onerror = () => {
-                        this.agregarAlerta("❌ Error al enlazar. Asegúrate de haber publicado el script correctamente.", "error");
+                        this.agregarAlerta("❌ Error al enlazar. Asegúrate de haber publicado el script correctamente como aplicación web accesible para todos.", "error");
                         limpiarScript();
                     };
 
