@@ -78,8 +78,12 @@
 
     <main class="max-w-7xl mx-auto p-4 space-y-6">
         
-        <!-- RESUMEN DE CRITERIOS GH -->
-        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- RESUMEN DINÁMICO DE TOTALES Y CRITERIOS GH (SE ACTUALIZA AL FILTRAR) -->
+        <section class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-gradient-to-br from-slate-700 to-slate-900 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between col-span-2 sm:col-span-1">
+                <div class="flex justify-between items-center"><span class="text-xs font-bold uppercase tracking-wider">👥 Total Filtrados</span><span>📊</span></div>
+                <p class="text-3xl font-black mt-2" x-text="trabajadoresFiltrados.length"></p>
+            </div>
             <div class="bg-gradient-to-br from-green-600 to-emerald-700 text-white rounded-2xl p-4 shadow-sm flex flex-col justify-between">
                 <div class="flex justify-between items-center"><span class="text-xs font-bold uppercase tracking-wider">🏆 Excelente</span><span>🔥</span></div>
                 <p class="text-3xl font-black mt-2" x-text="totalesCriterio.excelente"></p>
@@ -113,20 +117,26 @@
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="lg:col-span-1">
+                <!-- BÚSQUEDA GENERAL -->
+                <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar por DNI, Nombre o Ruta</label>
                     <input type="text" x-model="filtros.search" @input.debounce.200ms="filtrarDatos()" placeholder="Ej: 00805859 o Carlos..." class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rojo-agricola">
                 </div>
+
+                <!-- SELECCIÓN MÚLTIPLE CRITERIO GH -->
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH)</label>
-                    <select x-model="filtros.criterio" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                        <option value="">TODOS</option>
-                        <option value="EXCELENTE">EXCELENTE</option>
-                        <option value="BUENO">BUENO</option>
-                        <option value="REGULAR">REGULAR</option>
-                        <option value="MALO">MALO</option>
-                    </select>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Criterio (GH) - Varios</label>
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-2.5 space-y-1.5 max-h-32 overflow-y-auto text-xs">
+                        <template x-for="opcion in ['EXCELENTE', 'BUENO', 'REGULAR', 'MALO']" :key="opcion">
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                                <input type="checkbox" :value="opcion" x-model="filtros.criterios" @change="filtrarDatos()" class="rounded text-rojo-agricola focus:ring-rojo-agricola h-4 w-4">
+                                <span class="font-semibold text-gray-700" x-text="opcion"></span>
+                            </label>
+                        </template>
+                    </div>
                 </div>
+
+                <!-- ESTADO EMPADRONAMIENTO -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Estado Empadronamiento</label>
                     <select x-model="filtros.estadoEmpadronamiento" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
@@ -135,11 +145,24 @@
                         <option value="NO EMPADRONADO">NO EMPADRONADO</option>
                     </select>
                 </div>
+
+                <!-- ACTIVO FUNDO -->
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Activo Fundo</label>
                     <select x-model="filtros.activoFundo" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
                         <option value="">TODOS</option>
                         <option value="POR CONTACTAR">POR CONTACTAR</option>
+                    </select>
+                </div>
+
+                <!-- FILTRO POR MODALIDAD -->
+                <div class="md:col-span-2 lg:col-span-4">
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Modalidad</label>
+                    <select x-model="filtros.modalidad" @change="filtrarDatos()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                        <option value="">TODAS LAS MODALIDADES</option>
+                        <template x-for="mod in modalidadesUnicas" :key="mod">
+                            <option :value="mod" x-text="mod"></option>
+                        </template>
                     </select>
                 </div>
             </div>
@@ -165,7 +188,6 @@
                     <div class="grid grid-cols-2 gap-x-2 gap-y-3 text-xs text-gray-600">
                         <div>
                             <span class="text-gray-400 block text-[10px] uppercase font-bold">Criterio (GH)</span> 
-                            <!-- FORMATO COLOR EN CRITERIO GH (MÓVIL) -->
                             <span class="font-black px-2 py-0.5 rounded-md inline-block mt-0.5" 
                                   :class="obtenerClaseCriterio(t.criterioGh)" 
                                   x-text="t.criterioGh"></span>
@@ -173,6 +195,7 @@
                         <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Celular</span> <span class="font-medium text-gray-900" x-text="t.celularNisira"></span></div>
                         <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Ruta (App)</span> <span class="font-bold text-emerald-700" x-text="t.rutaApp"></span></div>
                         <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Estado</span> <span class="font-bold text-gray-900" x-text="t.estadoEmpadronamiento"></span></div>
+                        <div><span class="text-gray-400 block text-[10px] uppercase font-bold">Modalidad</span> <span class="font-semibold text-gray-800" x-text="t.modalidadFinal"></span></div>
                     </div>
 
                     <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
@@ -210,21 +233,18 @@
                                 <td class="p-4 font-mono font-bold text-gray-700" x-text="t.dni"></td>
                                 <td class="p-4 font-semibold text-gray-900" x-text="t.apellidosNombres"></td>
                                 <td class="p-4 text-rojo-agricola font-black" x-text="t.promedio"></td>
-                                
-                                <!-- FORMATO COLOR EN CRITERIO GH (ESCRITORIO) -->
                                 <td class="p-4">
                                     <span class="px-2.5 py-1 text-xs font-black rounded-lg inline-block" 
                                           :class="obtenerClaseCriterio(t.criterioGh)" 
                                           x-text="t.criterioGh"></span>
                                 </td>
-
                                 <td class="p-4 text-gray-600" x-text="t.celularNisira"></td>
                                 <td class="p-4 text-gray-500" x-text="t.whatsappPlataforma"></td>
                                 <td class="p-4 text-gray-500" x-text="t.rutaNisira"></td>
                                 <td class="p-4 font-bold text-emerald-700" x-text="t.rutaApp"></td>
                                 <td class="p-4 text-xs font-semibold text-gray-700" x-text="t.estadoEmpadronamiento"></td>
                                 <td class="p-4 text-center font-bold text-xs text-gray-700" x-text="t.activoFundo"></td>
-                                <td class="p-4 text-xs text-gray-600" x-text="t.modalidadFinal"></td>
+                                <td class="p-4 text-xs font-semibold text-gray-700" x-text="t.modalidadFinal"></td>
                                 <td class="p-4">
                                     <span class="px-2.5 py-1 text-xs font-bold rounded-full" 
                                           :class="t.alerta === 'OBSERVADO' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" 
@@ -260,13 +280,19 @@
                 todosLosTrabajadores: [],
                 trabajadoresFiltrados: [],
                 trabajadoresPaginados: [],
+                modalidadesUnicas: [],
                 alertas: [],
-                filtros: { search: '', criterio: '', estadoEmpadronamiento: '', activoFundo: '' },
+                filtros: { 
+                    search: '', 
+                    criterios: [], 
+                    estadoEmpadronamiento: '', 
+                    activoFundo: '', 
+                    modalidad: '' 
+                },
                 totalesCriterio: { malo: 0, regular: 0, bueno: 0, excelente: 0 },
                 limiteElementos: 50,
                 mostrarBotonInstalar: false,
 
-                // FUNCIÓN PARA ASIGNAR COLORES SEGÚN EL CRITERIO GH
                 obtenerClaseCriterio(criterio) {
                     const c = String(criterio || '').toUpperCase().trim();
                     if (c.includes('EXCELENTE')) return 'bg-emerald-100 text-emerald-700 border border-emerald-300';
@@ -307,7 +333,6 @@
                         this.db = e.target.result;
                         this.cargarDatosLocales();
                         
-                        // AUTO CONECTAR AL INICIAR SI HAY INTERNET
                         if (this.isOnline) {
                             this.sincronizarConSheets();
                         }
@@ -321,14 +346,23 @@
                     const getAll = store.getAll();
                     getAll.onsuccess = () => {
                         this.todosLosTrabajadores = getAll.result || [];
-                        this.calcularTotalesGlobales();
+                        this.extraerModalidades();
                         this.filtrarDatos();
                     };
                 },
 
-                calcularTotalesGlobales() {
-                    this.totalesCriterio = { malo: 0, regular: 0, bueno: 0, excelente: 0 };
+                extraerModalidades() {
+                    const mods = new Set();
                     this.todosLosTrabajadores.forEach(t => {
+                        let mod = String(t.modalidadFinal || '').trim();
+                        if (mod) mods.add(mod);
+                    });
+                    this.modalidadesUnicas = Array.from(mods).sort();
+                },
+
+                calcularTotalesFiltrados() {
+                    this.totalesCriterio = { malo: 0, regular: 0, bueno: 0, excelente: 0 };
+                    this.trabajadoresFiltrados.forEach(t => {
                         const crit = String(t.criterioGh || '').toUpperCase().trim();
                         if (crit.includes('MALO')) this.totalesCriterio.malo++;
                         if (crit.includes('REGULAR')) this.totalesCriterio.regular++;
@@ -363,13 +397,20 @@
 
                         const matchSearch = s === '' || matchDNI || apellidosNombres.includes(s) || rutaApp.includes(s);
 
-                        const matchCriterio = this.filtros.criterio === '' || String(t.criterioGh || '').toUpperCase().trim() === this.filtros.criterio;
+                        // Selección múltiple de Criterio GH
+                        const criterioTrabajador = String(t.criterioGh || '').toUpperCase().trim();
+                        const matchCriterio = this.filtros.criterios.length === 0 || this.filtros.criterios.includes(criterioTrabajador);
+
                         const matchEmpadron = this.filtros.estadoEmpadronamiento === '' || String(t.estadoEmpadronamiento || '').toUpperCase().trim() === this.filtros.estadoEmpadronamiento;
                         const matchFundo = this.filtros.activoFundo === '' || String(t.activoFundo || '').toUpperCase().trim() === this.filtros.activoFundo;
+                        
+                        // Filtro por Modalidad
+                        const matchModalidad = this.filtros.modalidad === '' || String(t.modalidadFinal || '').trim() === this.filtros.modalidad;
 
-                        return matchSearch && matchCriterio && matchEmpadron && matchFundo;
+                        return matchSearch && matchCriterio && matchEmpadron && matchFundo && matchModalidad;
                     });
 
+                    this.calcularTotalesFiltrados();
                     this.actualizarVistaPaginada();
                 },
 
